@@ -1,0 +1,35 @@
+{
+  "name": "api-node-typescript-ddd",
+  "version": "1.0.0",
+  "description": "Template API NodeJS con Typescript y Clean Architecture",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:ddd": "nodemon ./src/app.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alvarosaccomani/api-node-typescript-ddd.git"
+  },
+  "author": "Alvaro Tomas Saccomani",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alvarosaccomani/api-node-typescript-ddd/issues"
+  },
+  "homepage": "https://github.com/alvarosaccomani/api-node-typescript-ddd#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.17",
+    "@types/dotenv": "^8.2.0",
+    "@types/express": "^4.17.21",
+    "@types/socket.io": "^3.0.2",
+    "jest": "^29.7.0",
+    "nodemon": "^3.1.0",
+    "typescript": "^5.4.5"
+  }
+}
