@@ -3,7 +3,7 @@ services:
   api-ats-clean-architecture:
     build: .
     ports:
-      - "3005:3005"
+      - "3006:3006"
     environment:
       - PORT
       - DB_HOST
