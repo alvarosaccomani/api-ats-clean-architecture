@@ -1,0 +1,189 @@
+import { Request, Response } from "express";
+import { AuthUseCase } from "../../../application/auth/auth-use-case";
+import SocketAdapter from "../../services/socketAdapter";
+
+export class AuthController {
+    constructor(private authUseCase: AuthUseCase, private socketAdapter: SocketAdapter) {
+        this.loginCtrl = this.loginCtrl.bind(this);
+        this.registerCtrl = this.registerCtrl.bind(this);
+        this.confirmCtrl = this.confirmCtrl.bind(this);
+        this.forgotCtrl = this.forgotCtrl.bind(this);
+        this.resetCtrl = this.resetCtrl.bind(this);
+        this.userNickExistCtrl = this.userNickExistCtrl.bind(this);
+        this.userEmailExistCtrl = this.userEmailExistCtrl.bind(this);
+    }
+
+    public async loginCtrl(req: Request, res: Response) {
+        try {
+            const { usr_user, usr_password, gettoken } = req.body;
+            const result = await this.authUseCase.loginUser(usr_user, usr_password, gettoken);
+    
+            if (typeof result === 'string') {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Inicio de sesión exitoso.',
+                    data: { token: result },
+                });
+            } else {
+                return res.status(200).json({
+                    success: true,
+                    message: 'Inicio de sesión exitoso.',
+                    data: result,
+                });
+            }
+        } catch (error: any) {
+            console.error('Error en loginCtrl (controller):', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudo iniciar sesión.',
+                error: error.message,
+            });
+        }
+    }
+
+    public async registerCtrl({ body }: Request, res: Response) {
+        try {
+            const user = await this.authUseCase.registerUser(body);
+            res.send({ user });
+        } catch (error: any) {
+            console.error('Error en registerCtrl (controller):', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudo crear el usuario.',
+                error: error.message,
+            });
+        }
+    }
+
+    public async confirmCtrl({ body }: Request, res: Response) {
+        try {
+            const token = body.token;
+            const user = await this.authUseCase.confirmAccount(token);
+            res.send({ user });
+        } catch (error: any) {
+            console.error('Error en confirmCtrl (controller):', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudo confirmar la cuenta.',
+                error: error.message,
+            });
+        }
+    }
+
+    public async forgotCtrl({ body }: Request, res: Response) {
+        try {
+            const usr_email = body.usr_email;
+
+            if (!usr_email) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El correo electrónico es obligatorio.',
+                });
+            }
+            const user = await this.authUseCase.forgotPassword(usr_email);
+            return res.status(200).json({
+                success: true,
+                message: 'El correo electrónico fue enviado correctamente.',
+                data: user,
+            });
+        } catch (error: any) {
+            console.error('Error en forgotCtrl (controller):', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudo reestablecer la contraseña.',
+                error: error.message,
+            });
+        }
+    }
+
+    public async resetCtrl({ body }: Request, res: Response) {
+        try {
+            const { token, newPassword } = body;
+
+            if (!token || !newPassword) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El token y la nueva contraseña son obligatorios.',
+                });
+            }
+
+            const expirationDate = new Date();
+            const user = await this.authUseCase.getUserByResetToken(token, expirationDate);
+
+            if (!user) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El token es inválido o ha expirado.',
+                });
+            }
+
+            await this.authUseCase.updatePassword(user.usr_uuid, newPassword);
+
+            return res.status(200).json({
+                success: true,
+                message: 'Tu contraseña ha sido restablecida con éxito.',
+            });
+
+        } catch (error: any) {
+            console.error('Error en resetCtrl (controller):', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'Ocurrió un error al procesar la solicitud.',
+            });
+        }
+    }
+
+    public async userNickExistCtrl({ body }: Request, res: Response) {
+        try {
+            const usr_nick = body.usr_nick;
+
+            if (!usr_nick) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El nick de usuario es obligatorio.',
+                });
+            }
+            const exists = await this.authUseCase.userNickExist(usr_nick);
+            
+            return res.status(200).json({
+                success: true,
+                message: exists ? 'El nick de usuario existe.' : 'El nick de usuario no existe.',
+                data: exists,
+            });
+        } catch (error: any) {
+            console.error('Error en userNickExistCtrl (controller):', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'No se pudo verificar el nick de usuario.',
+                error: error.message,
+            });
+        }
+    }
+
+    public async userEmailExistCtrl({ body }: Request, res: Response) {
+        try {
+            const usr_email = body.usr_email;
+
+            if (!usr_email) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El correo electrónico es obligatorio.',
+                });
+            }
+            const exists = await this.authUseCase.userEmailExist(usr_email);
+            
+            return res.status(200).json({
+                success: true,
+                message: exists ? 'El correo electrónico existe.' : 'El correo electrónico no existe.',
+                data: exists,
+            });
+        } catch (error: any) {
+            console.error('Error en userEmailExistCtrl (controller):', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'No se pudo verificar el correo electrónico.',
+                error: error.message,
+            });
+        }
+    }
+}
