@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  api-ats-clean-architecture:
+    build: .
+    ports:
+      - "3005:3005"
+    environment:
+      - PORT
+      - DB_HOST
+      - DB_USER
+      - DB_PASSWORD
+      - DB_PORT
+      - DB_NAME
+      - BASE_URL_API
+      - JWT_SECRET
+      - EMAIL_FROM
+      - EMAIL_PASSWORD
+      - URL_CONFIRMATION
+      - URL_RESET
+    networks:
+      - pgvector_default
+
+networks:
+  pgvector_default:
+    external: true
