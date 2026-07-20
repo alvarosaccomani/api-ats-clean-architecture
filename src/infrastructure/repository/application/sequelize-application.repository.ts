@@ -1,15 +1,18 @@
 import { ApplicationEntity, ApplicationUpdateData } from "../../../domain/application/application.entity";
 import { ApplicationRepository } from "../../../domain/application/application.repository";
 import { SequelizeApplication } from "../../model/application/application.model";
+import { SequelizeTypeApplication } from "../../model/type-application/type-application.model";
 import { Op } from 'sequelize';
 
 export class SequelizeApplicationRepository implements ApplicationRepository {
     async getApplications(): Promise<ApplicationEntity[] | null> {
         try {
-            const applications = await SequelizeApplication.findAll();
+            const applications = await SequelizeApplication.findAll({
+                include: [{ model: SequelizeTypeApplication, as: 'typeApplication' }]
+            });
             return applications;
         } catch (error: any) {
-            console.error('Error en getApplication:', error.message);
+            console.error('Error en getApplications:', error.message);
             throw error;
         }
     }
@@ -17,7 +20,8 @@ export class SequelizeApplicationRepository implements ApplicationRepository {
     async findApplicationById(app_uuid: string): Promise<ApplicationEntity | null> {
         try {
             const application = await SequelizeApplication.findOne({
-                where: { app_uuid: app_uuid ?? null }
+                where: { app_uuid: app_uuid ?? null },
+                include: [{ model: SequelizeTypeApplication, as: 'typeApplication' }]
             });
             if (!application) {
                 throw new Error(`No se encontró la aplicación con Id: ${app_uuid}`);
