@@ -1,6 +1,8 @@
 import { Request, Response } from "express";
 import { AuthUseCase } from "../../../application/auth/auth-use-case";
 import SocketAdapter from "../../services/socketAdapter";
+import { SequelizeUserAuthLogRepository } from "../../repository/user-auth-log/sequelize-user-auth-log.repository";
+import { UserAuthLogValue } from "../../../domain/user-auth-log/user-auth-log.value";
 
 export class AuthController {
     constructor(private authUseCase: AuthUseCase, private socketAdapter: SocketAdapter) {
@@ -18,6 +20,24 @@ export class AuthController {
             const { usr_user, usr_password, gettoken } = req.body;
             const result = await this.authUseCase.loginUser(usr_user, usr_password, gettoken);
     
+            const userObj = typeof result === 'string' ? null : (result as any)?.user;
+            const usr_uuid = userObj?.usr_uuid || 'ANONYMOUS';
+
+            // Registro automático de auditoría LOGIN_SUCCESS
+            try {
+                const logRepo = new SequelizeUserAuthLogRepository();
+                await logRepo.createUserAuthLog(new UserAuthLogValue({
+                    usr_uuid,
+                    app_uuid: req.body.app_uuid || 'ATS_CENTRAL',
+                    usraulo_action: 'LOGIN_SUCCESS',
+                    usraulo_ipaddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
+                    usraulo_useragent: req.headers['user-agent'] || 'Unknown',
+                    usraulo_failurereason: ''
+                }));
+            } catch (logErr: any) {
+                console.error('Error al guardar log de auditoría:', logErr.message);
+            }
+
             if (typeof result === 'string') {
                 return res.status(200).json({
                     success: true,
@@ -33,6 +53,22 @@ export class AuthController {
             }
         } catch (error: any) {
             console.error('Error en loginCtrl (controller):', error.message);
+
+            // Registro automático de auditoría LOGIN_FAILED
+            try {
+                const logRepo = new SequelizeUserAuthLogRepository();
+                await logRepo.createUserAuthLog(new UserAuthLogValue({
+                    usr_uuid: 'UNKNOWN',
+                    app_uuid: req.body.app_uuid || 'ATS_CENTRAL',
+                    usraulo_action: 'LOGIN_FAILED',
+                    usraulo_ipaddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
+                    usraulo_useragent: req.headers['user-agent'] || 'Unknown',
+                    usraulo_failurereason: error.message || 'Credenciales incorrectas'
+                }));
+            } catch (logErr: any) {
+                console.error('Error al guardar log de falla:', logErr.message);
+            }
+
             return res.status(400).json({
                 success: false,
                 message: 'No se pudo iniciar sesión.',
