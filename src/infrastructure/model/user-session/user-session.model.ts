@@ -47,7 +47,7 @@ SequelizeUserSession.init({
   timestamps: true,
   createdAt: 'usrs_createdat',
   updatedAt: 'usrs_updatedat',
-  tableName: 'usrs_UsersSessions'
+  tableName: 'usrs_userssessions'
 });
 
 // Relaciones

@@ -51,7 +51,7 @@ SequelizeUserAuthLog.init({
 }, {
   sequelize,
   timestamps: false,
-  tableName: 'usraulo_UsersAuthLogs'
+  tableName: 'usraulo_usersauthlogs'
 });
 
 // Relaciones

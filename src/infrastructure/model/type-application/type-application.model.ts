@@ -58,7 +58,7 @@ SequelizeTypeApplication.init({
   timestamps: true,
   createdAt: 'tapp_createdat',
   updatedAt: 'tapp_updatedat',
-  tableName: 'tapp_TypesApplications'
+  tableName: 'tapp_typesapplications'
 });
 
 // Relación entre Aplicación y Tipo de Aplicación
