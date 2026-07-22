@@ -5,6 +5,7 @@ import { SequelizeUserAuthLogRepository } from "../../repository/user-auth-log/s
 import { UserAuthLogValue } from "../../../domain/user-auth-log/user-auth-log.value";
 import * as jwt from 'jsonwebtoken';
 import moment from 'moment';
+import { createToken } from "../../services/jwt.service";
 
 export class AuthController {
     constructor(private authUseCase: AuthUseCase, private socketAdapter: SocketAdapter) {
@@ -24,9 +25,10 @@ export class AuthController {
             const { usr_user, usr_password, gettoken } = req.body;
             const result = await this.authUseCase.loginUser(usr_user, usr_password, gettoken);
     
-            const userObj = typeof result === 'string' ? null : (result as any)?.user;
+            const userObj = typeof result === 'string' ? null : (result as any);
             const usr_uuid = userObj?.usr_uuid || 'ANONYMOUS';
-
+            const token = typeof result === 'string' ? result : createToken(userObj);
+ 
             // Registro automático de auditoría LOGIN_SUCCESS
             try {
                 const logRepo = new SequelizeUserAuthLogRepository();
@@ -43,20 +45,15 @@ export class AuthController {
             } catch (logErr: any) {
                 console.error('Error al guardar log de auditoría:', logErr.message);
             }
-
-            if (typeof result === 'string') {
-                return res.status(200).json({
-                    success: true,
-                    message: 'Inicio de sesión exitoso.',
-                    data: { token: result },
-                });
-            } else {
-                return res.status(200).json({
-                    success: true,
-                    message: 'Inicio de sesión exitoso.',
-                    data: result,
-                });
-            }
+ 
+            return res.status(200).json({
+                success: true,
+                message: 'Inicio de sesión exitoso.',
+                data: {
+                    token,
+                    user: userObj
+                }
+            });
         } catch (error: any) {
             console.error('Error en loginCtrl (controller):', error.message);
 
@@ -242,7 +239,7 @@ export class AuthController {
                 });
             }
 
-            const secret = process.env.JWT_SECRET || 'web_app_ats_works_api';
+            const secret = process.env.JWT_SECRET || 'web_app_atssuite_api';
             const payload = {
                 sub: user.sub || user.usr_uuid,
                 app_uuid,
@@ -277,7 +274,7 @@ export class AuthController {
                 });
             }
 
-            const secret = process.env.JWT_SECRET || 'web_app_ats_works_api';
+            const secret = process.env.JWT_SECRET || 'web_app_atssuite_api';
             const decoded = jwt.verify(sso_token, secret) as any;
 
             if (decoded.type !== 'SSO_EXCHANGE') {

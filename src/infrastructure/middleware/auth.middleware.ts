@@ -25,7 +25,7 @@ export function ensureAuth(req: AuthenticatedRequest, res: Response, next: NextF
     }
 
     const token = authHeader.split(' ')[1];
-    const secret = process.env.JWT_SECRET || 'web_app_ats_works_api';
+    const secret = process.env.JWT_SECRET || 'web_app_atssuite_api';
 
     try {
         const decoded = jwt.verify(token, secret);

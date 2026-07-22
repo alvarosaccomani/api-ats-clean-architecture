@@ -3,7 +3,7 @@ import moment from 'moment';
 import { UserEntity } from "../../domain/user/user.entity";
 
 export function createToken(user: UserEntity) {
-    const secret = process.env.JWT_SECRET || 'web_app_ats_works_api';
+    const secret = process.env.JWT_SECRET || 'web_app_atssuite_api';
     const payload =  {
         sub: user.usr_uuid,
         usr_nick: user.usr_nick,
