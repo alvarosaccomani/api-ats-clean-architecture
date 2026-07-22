@@ -3,8 +3,9 @@ import { SequelizeTransactionRepository } from "../../repository/transaction/seq
 import { TransactionUseCase } from "../../../application/transaction/transaction-use-case";
 import { TransactionController } from "../../controller/transaction/transaction.controller";
 import { ensureAuth } from "../../middleware/auth.middleware";
+import SocketAdapter from "../../services/socketAdapter";
 
-function configureTransactionRoutes(app: Express) {
+function configureTransactionRoutes(app: Express, socketAdapter: SocketAdapter) {
     /*
     *   Iniciar repository
     */
@@ -18,7 +19,7 @@ function configureTransactionRoutes(app: Express) {
     /*
     *   Iniciar controller
     */
-    const transactionCtrl = new TransactionController(transactionUseCase);
+    const transactionCtrl = new TransactionController(transactionUseCase, socketAdapter);
     
     /*
     *   Registrar rutas protegidas con ensureAuth
