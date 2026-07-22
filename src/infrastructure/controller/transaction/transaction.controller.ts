@@ -1,8 +1,9 @@
 import { Request, Response } from "express";
 import { TransactionUseCase } from "../../../application/transaction/transaction-use-case";
+import SocketAdapter from "../../services/socketAdapter";
 
 export class TransactionController {
-    constructor(private transactionUseCase: TransactionUseCase) {
+    constructor(private transactionUseCase: TransactionUseCase, private socketAdapter: SocketAdapter) {
         this.getAllCtrl = this.getAllCtrl.bind(this);
         this.getBySubscriberCtrl = this.getBySubscriberCtrl.bind(this);
         this.getCtrl = this.getCtrl.bind(this);
@@ -94,6 +95,9 @@ export class TransactionController {
                 });
             }
             const transaction = await this.transactionUseCase.saveTransaction(req.body);
+            if (transaction) {
+                this.socketAdapter.emitEvent('transaction_created', { transaction });
+            }
             return res.status(200).json({
                 success: true,
                 message: 'Transacción registrada.',
