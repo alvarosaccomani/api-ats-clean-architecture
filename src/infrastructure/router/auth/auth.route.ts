@@ -4,6 +4,8 @@ import { AuthUseCase } from "../../../application/auth/auth-use-case";
 import { AuthController } from "../../../infrastructure/controller/auth/auth.controller";
 import SocketAdapter from "../../services/socketAdapter";
 
+import { ensureAuth } from "../../middleware/auth.middleware";
+
 function configureAuthRoutes(app: Express, socketAdapter: SocketAdapter) {
     /*
     *   Iniciar repository
@@ -30,6 +32,10 @@ function configureAuthRoutes(app: Express, socketAdapter: SocketAdapter) {
     app.post(`/${process.env.BASE_URL_API}/reset-password`, authCtrl.resetCtrl);
     app.post(`/${process.env.BASE_URL_API}/user-nick-exist`, authCtrl.userNickExistCtrl);
     app.post(`/${process.env.BASE_URL_API}/user-email-exist`, authCtrl.userEmailExistCtrl);
+    
+    // SSO Endpoints
+    app.post(`/${process.env.BASE_URL_API}/auth/sso/token`, ensureAuth, authCtrl.generateSSOTokenCtrl);
+    app.post(`/${process.env.BASE_URL_API}/auth/sso/verify`, authCtrl.verifySSOTokenCtrl);
 }
 
 export default configureAuthRoutes;

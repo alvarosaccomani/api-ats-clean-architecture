@@ -3,6 +3,8 @@ import { AuthUseCase } from "../../../application/auth/auth-use-case";
 import SocketAdapter from "../../services/socketAdapter";
 import { SequelizeUserAuthLogRepository } from "../../repository/user-auth-log/sequelize-user-auth-log.repository";
 import { UserAuthLogValue } from "../../../domain/user-auth-log/user-auth-log.value";
+import * as jwt from 'jsonwebtoken';
+import moment from 'moment';
 
 export class AuthController {
     constructor(private authUseCase: AuthUseCase, private socketAdapter: SocketAdapter) {
@@ -13,6 +15,8 @@ export class AuthController {
         this.resetCtrl = this.resetCtrl.bind(this);
         this.userNickExistCtrl = this.userNickExistCtrl.bind(this);
         this.userEmailExistCtrl = this.userEmailExistCtrl.bind(this);
+        this.generateSSOTokenCtrl = this.generateSSOTokenCtrl.bind(this);
+        this.verifySSOTokenCtrl = this.verifySSOTokenCtrl.bind(this);
     }
 
     public async loginCtrl(req: Request, res: Response) {
@@ -223,6 +227,80 @@ export class AuthController {
                 success: false,
                 message: 'No se pudo verificar el correo electrónico.',
                 error: error.message,
+            });
+        }
+    }
+
+    public async generateSSOTokenCtrl(req: Request, res: Response) {
+        try {
+            const user = (req as any).user;
+            const { app_uuid } = req.body;
+            if (!app_uuid) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El identificador de aplicación (app_uuid) es requerido.'
+                });
+            }
+
+            const secret = process.env.JWT_SECRET || 'web_app_ats_works_api';
+            const payload = {
+                sub: user.sub || user.usr_uuid,
+                app_uuid,
+                type: 'SSO_EXCHANGE',
+                iat: moment().unix(),
+                exp: moment().add(30, 'seconds').unix()
+            };
+
+            const token = jwt.sign(payload, secret);
+            return res.status(200).json({
+                success: true,
+                message: 'Token SSO temporal generado.',
+                data: { token }
+            });
+        } catch (error: any) {
+            console.error('Error en generateSSOTokenCtrl:', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudo generar el token SSO.',
+                error: error.message
+            });
+        }
+    }
+
+    public async verifySSOTokenCtrl(req: Request, res: Response) {
+        try {
+            const { sso_token } = req.body;
+            if (!sso_token) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El token SSO (sso_token) es requerido.'
+                });
+            }
+
+            const secret = process.env.JWT_SECRET || 'web_app_ats_works_api';
+            const decoded = jwt.verify(sso_token, secret) as any;
+
+            if (decoded.type !== 'SSO_EXCHANGE') {
+                throw new Error('Tipo de token inválido para intercambio SSO.');
+            }
+
+            // Buscar datos extendidos del usuario para devolver al satélite
+            const userDetails = await this.authUseCase.userNickExist(decoded.sub); // Buscar por UUID / nick
+            
+            return res.status(200).json({
+                success: true,
+                message: 'Token SSO verificado correctamente.',
+                data: {
+                    usr_uuid: decoded.sub,
+                    app_uuid: decoded.app_uuid
+                }
+            });
+        } catch (error: any) {
+            console.error('Error en verifySSOTokenCtrl:', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'Token SSO inválido o expirado.',
+                error: error.message
             });
         }
     }
