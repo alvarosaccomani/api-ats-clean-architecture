@@ -26,14 +26,16 @@ export class AuthController {
             // Registro automático de auditoría LOGIN_SUCCESS
             try {
                 const logRepo = new SequelizeUserAuthLogRepository();
-                await logRepo.createUserAuthLog(new UserAuthLogValue({
+                const logVal = new UserAuthLogValue({
                     usr_uuid,
                     app_uuid: req.body.app_uuid || 'ATS_CENTRAL',
                     usraulo_action: 'LOGIN_SUCCESS',
                     usraulo_ipaddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
                     usraulo_useragent: req.headers['user-agent'] || 'Unknown',
                     usraulo_failurereason: ''
-                }));
+                });
+                await logRepo.createUserAuthLog(logVal);
+                this.socketAdapter.emitEvent('auth_log_created', logVal);
             } catch (logErr: any) {
                 console.error('Error al guardar log de auditoría:', logErr.message);
             }
@@ -57,14 +59,16 @@ export class AuthController {
             // Registro automático de auditoría LOGIN_FAILED
             try {
                 const logRepo = new SequelizeUserAuthLogRepository();
-                await logRepo.createUserAuthLog(new UserAuthLogValue({
+                const logVal = new UserAuthLogValue({
                     usr_uuid: 'UNKNOWN',
                     app_uuid: req.body.app_uuid || 'ATS_CENTRAL',
                     usraulo_action: 'LOGIN_FAILED',
                     usraulo_ipaddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
                     usraulo_useragent: req.headers['user-agent'] || 'Unknown',
                     usraulo_failurereason: error.message || 'Credenciales incorrectas'
-                }));
+                });
+                await logRepo.createUserAuthLog(logVal);
+                this.socketAdapter.emitEvent('auth_log_created', logVal);
             } catch (logErr: any) {
                 console.error('Error al guardar log de falla:', logErr.message);
             }
