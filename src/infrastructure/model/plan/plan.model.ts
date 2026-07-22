@@ -83,7 +83,7 @@ SequelizePlan.init({
   timestamps: true,
   createdAt: 'pla_createdat',
   updatedAt: 'pla_updatedat',
-  tableName: 'sub_plans'
+  tableName: 'pla_plans'
 });
 
 // Relación con Aplicación
