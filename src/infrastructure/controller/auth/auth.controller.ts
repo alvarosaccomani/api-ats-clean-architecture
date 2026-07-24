@@ -6,6 +6,7 @@ import { UserAuthLogValue } from "../../../domain/user-auth-log/user-auth-log.va
 import * as jwt from 'jsonwebtoken';
 import moment from 'moment';
 import { createToken } from "../../services/jwt.service";
+import { SequelizeUser } from "../../model/user/user.model";
 
 export class AuthController {
     constructor(private authUseCase: AuthUseCase, private socketAdapter: SocketAdapter) {
@@ -245,7 +246,7 @@ export class AuthController {
                 app_uuid,
                 type: 'SSO_EXCHANGE',
                 iat: moment().unix(),
-                exp: moment().add(30, 'seconds').unix()
+                exp: moment().add(5, 'minutes').unix()
             };
 
             const token = jwt.sign(payload, secret);
@@ -282,14 +283,26 @@ export class AuthController {
             }
 
             // Buscar datos extendidos del usuario para devolver al satélite
-            const userDetails = await this.authUseCase.userNickExist(decoded.sub); // Buscar por UUID / nick
+            const user = await SequelizeUser.findByPk(decoded.sub);
+            if (!user) {
+                throw new Error('El usuario no existe en la base de datos central.');
+            }
+
+            // Generar token de sesión de larga duración
+            const sessionToken = createToken(user.dataValues);
             
             return res.status(200).json({
                 success: true,
                 message: 'Token SSO verificado correctamente.',
                 data: {
-                    usr_uuid: decoded.sub,
-                    app_uuid: decoded.app_uuid
+                    token: sessionToken,
+                    user: {
+                        usr_uuid: user.usr_uuid,
+                        usr_email: user.usr_email,
+                        usr_name: user.usr_name,
+                        usr_surname: user.usr_surname,
+                        usr_sysadmin: !!user.usr_sysadmin
+                    }
                 }
             });
         } catch (error: any) {
