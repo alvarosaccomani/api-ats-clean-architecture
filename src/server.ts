@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import initSocket from "./infrastructure/sockets/socketInit";
 import configureSocketsEvents from "./infrastructure/sockets";
 import configureExpressRoutes from "./infrastructure/router";
+import { setupAssociations } from "./infrastructure/model/associations";
 
 
 class Server {
@@ -14,6 +15,9 @@ class Server {
 
 
     constructor() {
+        // Inicializar relaciones de base de datos primero para evitar circular loading issues
+        setupAssociations();
+
         this.app = express();
         this.httpServer = createServer(this.app);
         this.socketAdapter = initSocket(this.httpServer);

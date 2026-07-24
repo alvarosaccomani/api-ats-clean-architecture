@@ -1,7 +1,6 @@
 import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../db/sequelize';
 import { TypeApplicationEntity } from '../../../domain/type-application/type-application.entity';
-import { SequelizeApplication } from '../application/application.model';
 
 export class SequelizeTypeApplication extends Model<TypeApplicationEntity> {
   declare tapp_uuid: string;
@@ -59,17 +58,6 @@ SequelizeTypeApplication.init({
   createdAt: 'tapp_createdat',
   updatedAt: 'tapp_updatedat',
   tableName: 'tapp_typesapplications'
-});
-
-// Relación entre Aplicación y Tipo de Aplicación
-SequelizeApplication.belongsTo(SequelizeTypeApplication, {
-  foreignKey: 'tapp_uuid',
-  as: 'typeApplication'
-});
-
-SequelizeTypeApplication.hasMany(SequelizeApplication, {
-  foreignKey: 'tapp_uuid',
-  as: 'applications'
 });
 
 // Sincronizar (solo en desarrollo)
