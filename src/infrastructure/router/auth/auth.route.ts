@@ -39,6 +39,7 @@ function configureAuthRoutes(app: Express, socketAdapter: SocketAdapter) {
     app.get(`/${process.env.BASE_URL_API}/auth/sso/check-status`, authCtrl.checkStatusCtrl);
     app.get(`/${process.env.BASE_URL_API}/auth/sso/config/:app_cod`, authCtrl.getAppConfigCtrl);
     app.post(`/${process.env.BASE_URL_API}/auth/sso/confirm-force`, authCtrl.confirmForceCtrl);
+    app.post(`/${process.env.BASE_URL_API}/auth/sso/log-auth`, authCtrl.logAuthCtrl);
 }
 
 export default configureAuthRoutes;

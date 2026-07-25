@@ -22,6 +22,7 @@ export class AuthController {
         this.checkStatusCtrl = this.checkStatusCtrl.bind(this);
         this.getAppConfigCtrl = this.getAppConfigCtrl.bind(this);
         this.confirmForceCtrl = this.confirmForceCtrl.bind(this);
+        this.logAuthCtrl = this.logAuthCtrl.bind(this);
     }
 
     public async loginCtrl(req: Request, res: Response) {
@@ -291,6 +292,22 @@ export class AuthController {
                 throw new Error('El usuario no existe en la base de datos central.');
             }
 
+            // Registro automático de auditoría LOGIN_SUCCESS (SSO)
+            try {
+                const logRepo = new SequelizeUserAuthLogRepository();
+                const logVal = new UserAuthLogValue({
+                    usr_uuid: decoded.sub,
+                    app_uuid: decoded.app_uuid,
+                    usraulo_action: 'LOGIN_SUCCESS',
+                    usraulo_ipaddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
+                    usraulo_useragent: req.headers['user-agent'] || 'UNKNOWN',
+                    usraulo_failurereason: ''
+                });
+                await logRepo.createUserAuthLog(logVal);
+            } catch (logError: any) {
+                console.error('Error al registrar auditoría SSO:', logError.message);
+            }
+
             // Generar token de sesión de larga duración
             const sessionToken = createToken(user.dataValues);
             
@@ -384,6 +401,34 @@ export class AuthController {
                 message: `Usuario ${user.usr_nick} confirmado con éxito.`
             });
         } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    public async logAuthCtrl(req: Request, res: Response) {
+        try {
+            const { usr_uuid, app_cod, usraulo_action, usraulo_ipaddress, usraulo_useragent } = req.body;
+            if (!usr_uuid || !app_cod) {
+                return res.status(400).json({ success: false, message: 'Falta usr_uuid o app_cod.' });
+            }
+
+            const { SequelizeApplication } = require('../../model/application/application.model');
+            const appRecord = await SequelizeApplication.findOne({ where: { app_cod } });
+            const app_uuid = appRecord?.app_uuid || 'ATS_CENTRAL';
+
+            const logRepo = new SequelizeUserAuthLogRepository();
+            const logVal = new UserAuthLogValue({
+                usr_uuid,
+                app_uuid,
+                usraulo_action: usraulo_action || 'LOGIN_SUCCESS',
+                usraulo_ipaddress: usraulo_ipaddress || (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
+                usraulo_useragent: usraulo_useragent || req.headers['user-agent'] || 'UNKNOWN',
+                usraulo_failurereason: ''
+            });
+            await logRepo.createUserAuthLog(logVal);
+            return res.status(200).json({ success: true, message: 'Log de autenticación registrado.' });
+        } catch (error: any) {
+            console.error('Error en logAuthCtrl:', error.message);
             return res.status(500).json({ success: false, error: error.message });
         }
     }
