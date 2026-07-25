@@ -61,7 +61,7 @@ export class UserValue implements UserEntity {
             usr_createdat?: Date,
             usr_updatedat?: Date,
         }) {
-        this.usr_uuid = uuid();
+        this.usr_uuid = usr_uuid || uuid();
         this.usr_name = usr_name;
         this.usr_surname = usr_surname;
         this.usr_password = usr_password;
