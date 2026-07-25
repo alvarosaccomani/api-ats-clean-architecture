@@ -106,9 +106,9 @@ export class UserUseCase {
         };
     }
 
-    public async updateUser(usr_uuid: string, { usr_name, usr_surname, usr_password, usr_image, usr_email, usr_nick, usr_bio, usr_registered, usr_socket, usr_online, usr_sysadmin } : { usr_name: string, usr_surname: string, usr_password: string, usr_image: string, usr_email: string, usr_nick: string, usr_bio: string, usr_registered: Date, usr_socket: string, usr_online: boolean, usr_sysadmin: boolean }) {
+    public async updateUser(usr_uuid: string, { usr_name, usr_surname, usr_password, usr_image, usr_email, usr_nick, usr_bio, usr_registered, usr_socket, usr_online, usr_sysadmin, usr_confirmed } : { usr_name: string, usr_surname: string, usr_password: string, usr_image: string, usr_email: string, usr_nick: string, usr_bio: string, usr_registered: Date, usr_socket: string, usr_online: boolean, usr_sysadmin: boolean, usr_confirmed: boolean }) {
         try {
-            const userUpdated = await this.userRepository.updateUser(usr_uuid, { usr_name, usr_surname, usr_password, usr_image, usr_email, usr_nick, usr_bio, usr_registered, usr_socket, usr_online, usr_sysadmin });
+            const userUpdated = await this.userRepository.updateUser(usr_uuid, { usr_name, usr_surname, usr_password, usr_image, usr_email, usr_nick, usr_bio, usr_registered, usr_socket, usr_online, usr_sysadmin, usr_confirmed });
             if(!userUpdated) {
                 throw new Error(`No se pudo actualizar el usuario.`);
             }

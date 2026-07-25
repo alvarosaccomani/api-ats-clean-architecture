@@ -95,7 +95,8 @@ export class SequelizeRepository implements UserRepository {
                     usr_registered: user.usr_registered,
                     usr_socket: user.usr_socket,
                     usr_online: user.usr_online,
-                    usr_sysadmin: user.usr_sysadmin
+                    usr_sysadmin: user.usr_sysadmin,
+                    usr_confirmed: user.usr_confirmed
                 }, 
                 { 
                     where: { usr_uuid },
