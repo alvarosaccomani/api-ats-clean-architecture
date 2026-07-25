@@ -36,6 +36,9 @@ function configureAuthRoutes(app: Express, socketAdapter: SocketAdapter) {
     // SSO Endpoints
     app.post(`/${process.env.BASE_URL_API}/auth/sso/token`, ensureAuth, authCtrl.generateSSOTokenCtrl);
     app.post(`/${process.env.BASE_URL_API}/auth/sso/verify`, authCtrl.verifySSOTokenCtrl);
+    app.get(`/${process.env.BASE_URL_API}/auth/sso/check-status`, authCtrl.checkStatusCtrl);
+    app.get(`/${process.env.BASE_URL_API}/auth/sso/config/:app_cod`, authCtrl.getAppConfigCtrl);
+    app.post(`/${process.env.BASE_URL_API}/auth/sso/confirm-force`, authCtrl.confirmForceCtrl);
 }
 
 export default configureAuthRoutes;

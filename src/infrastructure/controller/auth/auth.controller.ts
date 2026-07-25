@@ -19,6 +19,9 @@ export class AuthController {
         this.userEmailExistCtrl = this.userEmailExistCtrl.bind(this);
         this.generateSSOTokenCtrl = this.generateSSOTokenCtrl.bind(this);
         this.verifySSOTokenCtrl = this.verifySSOTokenCtrl.bind(this);
+        this.checkStatusCtrl = this.checkStatusCtrl.bind(this);
+        this.getAppConfigCtrl = this.getAppConfigCtrl.bind(this);
+        this.confirmForceCtrl = this.confirmForceCtrl.bind(this);
     }
 
     public async loginCtrl(req: Request, res: Response) {
@@ -312,6 +315,76 @@ export class AuthController {
                 message: 'Token SSO inválido o expirado.',
                 error: error.message
             });
+        }
+    }
+
+    public async checkStatusCtrl(req: Request, res: Response) {
+        try {
+            const { email } = req.query;
+            if (!email) {
+                return res.status(400).json({ success: false, message: 'Falta el email.' });
+            }
+            const user = await SequelizeUser.findOne({ where: { usr_email: email as string } });
+            if (!user) {
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+            }
+            return res.status(200).json({
+                success: true,
+                usr_confirmed: !!user.usr_confirmed,
+                usr_online: !!user.usr_online,
+                usr_sysadmin: !!user.usr_sysadmin
+            });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    public async getAppConfigCtrl(req: Request, res: Response) {
+        try {
+            const { app_cod } = req.params;
+            if (!app_cod) {
+                return res.status(400).json({ success: false, message: 'Falta el código de aplicación.' });
+            }
+            const { SequelizeApplication } = require('../../model/application/application.model');
+            const appRecord = await SequelizeApplication.findOne({ where: { app_cod } });
+            if (!appRecord) {
+                return res.status(404).json({ success: false, message: 'Aplicación no encontrada.' });
+            }
+            return res.status(200).json({
+                success: true,
+                app_loginmode: appRecord.app_loginmode || 'local',
+                app_url: appRecord.app_url
+            });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    public async confirmForceCtrl(req: Request, res: Response) {
+        try {
+            const { usr_user } = req.body;
+            if (!usr_user) {
+                return res.status(400).json({ success: false, message: 'Falta el usuario (email o nick).' });
+            }
+            const { Op } = require('sequelize');
+            const user = await SequelizeUser.findOne({
+                where: {
+                    [Op.or]: [
+                        { usr_email: usr_user },
+                        { usr_nick: usr_user }
+                    ]
+                }
+            });
+            if (!user) {
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+            }
+            await SequelizeUser.update({ usr_confirmed: true }, { where: { usr_uuid: user.usr_uuid } });
+            return res.status(200).json({
+                success: true,
+                message: `Usuario ${user.usr_nick} confirmado con éxito.`
+            });
+        } catch (error: any) {
+            return res.status(500).json({ success: false, error: error.message });
         }
     }
 }
