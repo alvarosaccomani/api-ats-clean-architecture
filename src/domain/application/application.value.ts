@@ -12,6 +12,7 @@ export class ApplicationValue implements ApplicationEntity {
     app_url: string;
     app_hasaccess: boolean;
     app_active: boolean;
+    app_loginmode: string;
     app_createdat: Date;
     app_updatedat: Date;
     
@@ -25,6 +26,7 @@ export class ApplicationValue implements ApplicationEntity {
             app_url,
             app_hasaccess,
             app_active,
+            app_loginmode,
             app_createdat,
             app_updatedat
         }:{ 
@@ -37,6 +39,7 @@ export class ApplicationValue implements ApplicationEntity {
             app_url: string,
             app_hasaccess: boolean,
             app_active: boolean,
+            app_loginmode?: string,
             app_createdat?: Date,
             app_updatedat?: Date,
         }) {
@@ -49,6 +52,7 @@ export class ApplicationValue implements ApplicationEntity {
         this.app_url = app_url;
         this.app_hasaccess = app_hasaccess ?? false;
         this.app_active = app_active ?? false;
+        this.app_loginmode = app_loginmode || 'local';
         this.app_createdat = app_createdat ?? moment().toDate();
         this.app_updatedat = app_updatedat ?? moment().toDate();
     }

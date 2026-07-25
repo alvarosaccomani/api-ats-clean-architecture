@@ -12,6 +12,7 @@ export class SequelizeApplication extends Model<ApplicationEntity> {
   declare app_url: string;
   declare app_hasaccess: boolean;
   declare app_active: boolean;
+  declare app_loginmode: string;
   declare app_createdat: Date;
   declare app_updatedat: Date;
 }
@@ -54,6 +55,11 @@ SequelizeApplication.init({
     type: DataTypes.BOOLEAN,
     allowNull: false,
     defaultValue: true
+  },
+  app_loginmode: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'local'
   },
   app_createdat: {
     type: DataTypes.DATE,

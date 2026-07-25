@@ -24,6 +24,7 @@ export class ApplicationUseCase {
         app_url: string;
         app_hasaccess: boolean;
         app_active: boolean;
+        app_loginmode: string;
     }): Promise<ApplicationEntity | null> {
         const applicationValue = new ApplicationValue(applicationData);
         const applicationCreated = await this.applicationRepository.createApplication(applicationValue);
