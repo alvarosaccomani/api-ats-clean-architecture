@@ -369,6 +369,7 @@ export class AuthController {
             }
             return res.status(200).json({
                 success: true,
+                app_uuid: appRecord.app_uuid,
                 app_loginmode: appRecord.app_loginmode || 'local',
                 app_url: appRecord.app_url
             });
