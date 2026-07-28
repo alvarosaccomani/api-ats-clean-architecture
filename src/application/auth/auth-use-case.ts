@@ -52,11 +52,6 @@ export class AuthUseCase {
     public async getUserByResetToken(token: string, expirationDate: Date) {
         try {
             const user = await this.authRepository.findUserByResetToken(token, expirationDate);
-
-            if (!user) {
-                throw new Error('No se encontró ningún usuario con este correo electrónico.');
-            }
-
             return user;
         } catch (error: any) {
             console.error('Error en getUserByResetToken (use case):', error.message);
