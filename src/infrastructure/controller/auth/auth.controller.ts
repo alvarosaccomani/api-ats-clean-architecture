@@ -175,6 +175,7 @@ export class AuthController {
             return res.status(500).json({
                 success: false,
                 message: 'Ocurrió un error al procesar la solicitud.',
+                error: error.message,
             });
         }
     }
