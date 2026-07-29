@@ -89,7 +89,8 @@ export class AuthController {
 
     public async registerCtrl({ body }: Request, res: Response) {
         try {
-            const user = await this.authUseCase.registerUser(body);
+            const { app_cod, ...userData } = body;
+            const user = await this.authUseCase.registerUser(userData, app_cod);
             res.send({ user });
         } catch (error: any) {
             console.error('Error en registerCtrl (controller):', error.message);
@@ -118,7 +119,7 @@ export class AuthController {
 
     public async forgotCtrl({ body }: Request, res: Response) {
         try {
-            const usr_email = body.usr_email;
+            const { usr_email, app_cod } = body;
 
             if (!usr_email) {
                 return res.status(400).json({
@@ -126,7 +127,7 @@ export class AuthController {
                     message: 'El correo electrónico es obligatorio.',
                 });
             }
-            const user = await this.authUseCase.forgotPassword(usr_email);
+            const user = await this.authUseCase.forgotPassword(usr_email, app_cod);
             return res.status(200).json({
                 success: true,
                 message: 'El correo electrónico fue enviado correctamente.',

@@ -33,7 +33,7 @@ export class AuthUseCase {
         return userConfirmation;
     }
 
-    public async forgotPassword ( usr_email: string = '' ) {        
+    public async forgotPassword ( usr_email: string = '', app_cod?: string ) {        
         try {
             const user = await this.authRepository.findUserByEmail(usr_email);
 
@@ -41,7 +41,7 @@ export class AuthUseCase {
                 throw new Error('No se encontró ningún usuario con este correo electrónico.');
             }
 
-            const userForgotPassword = await this.authRepository.forgotPassword(user);
+            const userForgotPassword = await this.authRepository.forgotPassword(user, app_cod);
             return userForgotPassword;
         } catch (error: any) {
             console.error('Error en forgotPassword (use case):', error.message);
@@ -88,10 +88,10 @@ export class AuthUseCase {
         }
     }
 
-    public async registerUser({ usr_uuid, usr_name, usr_surname, usr_password, usr_image, usr_email, usr_nick, usr_bio, usr_registered, usr_socket, usr_online, usr_confirmed, usr_confirmationtoken, usr_resetpasswordtoken, usr_resetpasswordexpires, usr_sysadmin } : { usr_uuid: string, usr_name: string, usr_surname: string, usr_password: string, usr_image: string, usr_email: string, usr_nick: string, usr_bio: string, usr_registered: Date, usr_socket: string, usr_online: boolean, usr_confirmed: boolean, usr_confirmationtoken: string, usr_resetpasswordtoken: string, usr_resetpasswordexpires: Date, usr_sysadmin: boolean }) {
+    public async registerUser({ usr_uuid, usr_name, usr_surname, usr_password, usr_image, usr_email, usr_nick, usr_bio, usr_registered, usr_socket, usr_online, usr_confirmed, usr_confirmationtoken, usr_resetpasswordtoken, usr_resetpasswordexpires, usr_sysadmin } : { usr_uuid: string, usr_name: string, usr_surname: string, usr_password: string, usr_image: string, usr_email: string, usr_nick: string, usr_bio: string, usr_registered: Date, usr_socket: string, usr_online: boolean, usr_confirmed: boolean, usr_confirmationtoken: string, usr_resetpasswordtoken: string, usr_resetpasswordexpires: Date, usr_sysadmin: boolean }, app_cod?: string) {
         try {
             const userValue = new UserValue({ usr_uuid, usr_name, usr_surname, usr_password, usr_image, usr_email, usr_nick, usr_bio, usr_registered, usr_socket, usr_online, usr_confirmed, usr_confirmationtoken, usr_resetpasswordtoken, usr_resetpasswordexpires, usr_sysadmin });
-            const userCreated = await this.authRepository.registerUser(userValue);
+            const userCreated = await this.authRepository.registerUser(userValue, app_cod);
             if(!userCreated) {
                 throw new Error(`No se pudo registrar el usuario.`);
             }
