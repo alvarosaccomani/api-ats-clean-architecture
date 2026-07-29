@@ -15,6 +15,8 @@ export class SequelizeApplication extends Model<ApplicationEntity> {
   declare app_loginmode: string;
   declare app_createdat: Date;
   declare app_updatedat: Date;
+  declare settings?: any[];
+  declare typeApplication?: any;
 }
 
 SequelizeApplication.init({
