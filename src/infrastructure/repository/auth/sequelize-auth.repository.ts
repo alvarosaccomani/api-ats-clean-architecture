@@ -2,6 +2,7 @@ import * as bcrypt from "bcryptjs";
 import { UserEntity } from "../../../domain/user/user.entity";
 import { AuthRepository } from "../../../domain/auth/auth.repository";
 import { SequelizeUser } from "../../model/user/user.model";
+import { SequelizeApplication } from "../../model/application/application.model";
 import { createToken } from "../../services/jwt.service";
 import { AuthService } from '../../services/auth-service.service';
 import { emailService } from '../../services/email-service.service';
@@ -45,7 +46,7 @@ export class SequelizeAuthRepository implements AuthRepository {
         }
     }
 
-    async registerUser(user: UserEntity): Promise<UserEntity | null> {
+    async registerUser(user: UserEntity, app_cod?: string): Promise<UserEntity | null> {
         try {
             const authService = new AuthService(process.env.JWT_SECRET || 'default_secret');
 
@@ -81,7 +82,17 @@ export class SequelizeAuthRepository implements AuthRepository {
             );
     
             try {
-                await emailService.sendConfirmationEmail(usr_email, confirmationToken);
+                const app = await SequelizeApplication.findOne({
+                    where: { app_cod: app_cod || 'Central' },
+                    include: [{ association: 'settings' }]
+                });
+
+                const settingsMap = (app?.settings || []).reduce((acc: any, curr: any) => {
+                    acc[curr.apps_key] = curr.apps_value;
+                    return acc;
+                }, {} as Record<string, string>);
+
+                await emailService.sendConfirmationEmail(usr_email, confirmationToken, app, settingsMap);
             } catch (emailError) {
                 console.error('Error al enviar el correo de confirmación:', emailError);
             }
@@ -128,7 +139,7 @@ export class SequelizeAuthRepository implements AuthRepository {
         }
     }
 
-    async forgotPassword( user: UserEntity ): Promise<UserEntity | null> {
+    async forgotPassword( user: UserEntity, app_cod?: string ): Promise<UserEntity | null> {
         try {
             const resetToken = generateToken();
             const hashedToken = hashToken(resetToken);
@@ -140,12 +151,22 @@ export class SequelizeAuthRepository implements AuthRepository {
             );
  
             try {
-                await emailService.sendReestablishmentEmail(user.usr_email, resetToken);
+                const app = await SequelizeApplication.findOne({
+                    where: { app_cod: app_cod || 'Central' },
+                    include: [{ association: 'settings' }]
+                });
+
+                const settingsMap = (app?.settings || []).reduce((acc: any, curr: any) => {
+                    acc[curr.apps_key] = curr.apps_value;
+                    return acc;
+                }, {} as Record<string, string>);
+
+                await emailService.sendReestablishmentEmail(user.usr_email, resetToken, app, settingsMap);
             } catch (emailError) {
                 console.error('Error al enviar el correo para reestablecer el email:', emailError);
                 throw new Error('Error al enviar el correo para reestablecer el email:');
             }
-    
+     
             return user;
         } catch (error: any) {
             console.error('Error al guardar el token:', error.message);
