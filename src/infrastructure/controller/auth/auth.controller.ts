@@ -7,6 +7,7 @@ import * as jwt from 'jsonwebtoken';
 import moment from 'moment';
 import { createToken } from "../../services/jwt.service";
 import { SequelizeUser } from "../../model/user/user.model";
+import { SystemEventLogger } from "../../services/system-event-logger.service";
 
 export class AuthController {
     constructor(private authUseCase: AuthUseCase, private socketAdapter: SocketAdapter) {
@@ -87,10 +88,19 @@ export class AuthController {
         }
     }
 
-    public async registerCtrl({ body }: Request, res: Response) {
+    public async registerCtrl(req: Request, res: Response) {
         try {
-            const { app_cod, ...userData } = body;
+            const { app_cod, ...userData } = req.body;
             const user = await this.authUseCase.registerUser(userData, app_cod);
+            
+            // Registrar evento en la bitácora
+            await SystemEventLogger.log(req, 'USER_CREATED', 'User', user.usr_uuid, {
+                usr_name: user.usr_name,
+                usr_surname: user.usr_surname,
+                usr_email: user.usr_email,
+                app_cod
+            });
+
             res.send({ user });
         } catch (error: any) {
             console.error('Error en registerCtrl (controller):', error.message);
