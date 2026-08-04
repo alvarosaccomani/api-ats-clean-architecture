@@ -11,8 +11,16 @@ export function paginator(items: any[], rawPage: string | null | undefined = '1'
 
   const offset = (clampedPage - 1) * clampedPerPage;
 
+  // Convertimos a objetos planos si son instancias de Sequelize para evitar referencias circulares al hacer spread
+  const plainItems = items.map(item => {
+    if (item && typeof item.toJSON === 'function') {
+      return item.toJSON();
+    }
+    return item;
+  });
+
   // Añadimos índice (empezando en 1)
-  const itemsWithIndex = items.map((e, idx) => ({
+  const itemsWithIndex = plainItems.map((e, idx) => ({
     ...e,
     index: idx + 1
   }));
