@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { ApplicationSettingUseCase } from "../../../application/application-setting/application-setting-use-case";
 import { ApplicationSettingValue } from "../../../domain/application-setting/application-setting.value";
+import { SystemEventLogger } from "../../services/system-event-logger.service";
 
 export class ApplicationSettingController {
     constructor(
@@ -48,6 +49,17 @@ export class ApplicationSettingController {
             });
 
             const setting = await this.settingUseCase.createSetting(value);
+            
+            if (setting) {
+                // Registrar evento
+                await SystemEventLogger.log(req, 'SETTING_CREATED', 'ApplicationSetting', setting.apps_uuid, {
+                    app_uuid,
+                    apps_key,
+                    apps_parameter,
+                    apps_value
+                });
+            }
+
             return res.status(201).json({
                 success: true,
                 message: 'Configuración guardada correctamente.',
@@ -76,6 +88,14 @@ export class ApplicationSettingController {
                 });
             }
 
+            // Registrar evento
+            await SystemEventLogger.log(req, 'SETTING_UPDATED', 'ApplicationSetting', apps_uuid, {
+                app_uuid,
+                apps_key: setting.apps_key,
+                apps_parameter: setting.apps_parameter,
+                apps_value: setting.apps_value
+            });
+
             return res.status(200).json({
                 success: true,
                 message: 'Configuración actualizada correctamente.',
@@ -101,6 +121,13 @@ export class ApplicationSettingController {
                     message: 'No se encontró el registro para eliminar.'
                 });
             }
+
+            // Registrar evento
+            await SystemEventLogger.log(req, 'SETTING_DELETED', 'ApplicationSetting', apps_uuid, {
+                app_uuid,
+                apps_key: setting.apps_key,
+                apps_parameter: setting.apps_parameter
+            });
 
             return res.status(200).json({
                 success: true,
