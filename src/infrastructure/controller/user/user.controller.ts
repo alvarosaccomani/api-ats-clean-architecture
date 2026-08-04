@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { UserUseCase } from "../../../application/user/user-use-case";
 import SocketAdapter from "../../services/socketAdapter";
 import { paginator } from "../../services/paginator.service";
+import { SystemEventLogger } from "../../services/system-event-logger.service";
 
 export class UserController {
     constructor(private userUseCase: UserUseCase, private socketAdapter: SocketAdapter) {
@@ -67,8 +68,9 @@ export class UserController {
         }
     }
 
-    public async saveCtrl({ body }: Request, res: Response) {
+    public async saveCtrl(req: Request, res: Response) {
         try {
+            const body = req.body;
             const usr_nick = body.usr_nick;
             const usr_email = body.usr_email;        
             if(!usr_nick) {
@@ -94,6 +96,14 @@ export class UserController {
                 });
             }
             const user = await this.userUseCase.saveUser(body);
+            
+            // Registrar evento
+            await SystemEventLogger.log(req, 'USER_CREATED', 'User', user.usr_uuid, {
+                usr_name: user.usr_name,
+                usr_surname: user.usr_surname,
+                usr_email: user.usr_email
+            });
+
             this.socketAdapter.emitEvent('user_created', { user });
             return res.status(200).json({
                 success: true,
@@ -129,6 +139,14 @@ export class UserController {
                 });
             }
             const user = await this.userUseCase.updateUser(usr_uuid, update);
+            
+            // Registrar evento
+            await SystemEventLogger.log(req, 'USER_UPDATED', 'User', user.usr_uuid, {
+                usr_name: user.usr_name,
+                usr_surname: user.usr_surname,
+                usr_email: user.usr_email
+            });
+
             return res.status(200).json({
                 success: true,
                 message: 'Usuario actualizado.',
@@ -155,6 +173,14 @@ export class UserController {
                 });
             }
             const user = await this.userUseCase.deleteUser(usr_uuid);
+            
+            // Registrar evento
+            await SystemEventLogger.log(req, 'USER_DELETED', 'User', usr_uuid, {
+                usr_name: user.usr_name,
+                usr_surname: user.usr_surname,
+                usr_email: user.usr_email
+            });
+
             this.socketAdapter.emitEvent('user_deleted', { usr_uuid });
             return res.status(200).json({
                 success: true,
