@@ -1,6 +1,7 @@
 version: '3.8'
 services:
   api-ats-clean-architecture:
+    container_name: api-ats-clean-architecture
     build: .
     ports:
       - "3006:3006"
