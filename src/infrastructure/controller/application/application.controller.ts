@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { ApplicationUseCase } from "../../../application/application/application-use-case";
+import { SystemEventLogger } from "../../services/system-event-logger.service";
 
 export class ApplicationController {
     constructor(private applicationUseCase: ApplicationUseCase) {
@@ -65,6 +66,15 @@ export class ApplicationController {
                 });
             }
             const application = await this.applicationUseCase.saveApplication(req.body);
+            
+            if (application) {
+                // Registrar evento
+                await SystemEventLogger.log(req, 'APPLICATION_ADDED', 'Application', application.app_uuid, {
+                    app_name: application.app_name,
+                    app_cod: application.app_cod
+                });
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Aplicación registrada.',
@@ -92,6 +102,15 @@ export class ApplicationController {
                 });
             }
             const application = await this.applicationUseCase.updateApplication(app_uuid, update);
+            
+            if (application) {
+                // Registrar evento
+                await SystemEventLogger.log(req, 'APPLICATION_UPDATED', 'Application', app_uuid, {
+                    app_name: application.app_name,
+                    app_cod: application.app_cod
+                });
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Aplicación actualizada.',
@@ -118,6 +137,15 @@ export class ApplicationController {
                 });
             }
             const application = await this.applicationUseCase.deleteApplication(app_uuid);
+            
+            if (application) {
+                // Registrar evento
+                await SystemEventLogger.log(req, 'APPLICATION_DELETED', 'Application', app_uuid, {
+                    app_name: application.app_name,
+                    app_cod: application.app_cod
+                });
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Aplicación eliminada.',
