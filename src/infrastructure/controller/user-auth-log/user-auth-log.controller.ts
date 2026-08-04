@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { UserAuthLogUseCase } from "../../../application/user-auth-log/user-auth-log-use-case";
+import { paginator } from "../../services/paginator.service";
 
 export class UserAuthLogController {
     constructor(private userAuthLogUseCase: UserAuthLogUseCase) {
@@ -14,6 +15,17 @@ export class UserAuthLogController {
     public async getAllCtrl(req: Request, res: Response) {
         try {
             const logs = await this.userAuthLogUseCase.getUserAuthLogs();
+            const pageStr = req.query.page as string;
+            const perPageStr = req.query.perPage as string;
+            
+            if (pageStr && perPageStr) {
+                return res.status(200).send({
+                    success: true,
+                    message: 'Logs de auditoría retornados.',
+                    ...paginator(logs || [], pageStr, perPageStr)
+                });
+            }
+
             return res.status(200).send({
                 success: true,
                 message: 'Logs de auditoría retornados.',
