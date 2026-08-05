@@ -40,7 +40,7 @@ export class AuthController {
                 const logRepo = new SequelizeUserAuthLogRepository();
                 const logVal = new UserAuthLogValue({
                     usr_uuid,
-                    app_uuid: req.body.app_uuid || 'ATS_CENTRAL',
+                    app_uuid: req.body.app_uuid || 'Central',
                     usraulo_action: 'LOGIN_SUCCESS',
                     usraulo_ipaddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
                     usraulo_useragent: req.headers['user-agent'] || 'Unknown',
@@ -68,7 +68,7 @@ export class AuthController {
                 const logRepo = new SequelizeUserAuthLogRepository();
                 const logVal = new UserAuthLogValue({
                     usr_uuid: 'UNKNOWN',
-                    app_uuid: req.body.app_uuid || 'ATS_CENTRAL',
+                    app_uuid: req.body.app_uuid || 'Central',
                     usraulo_action: 'LOGIN_FAILED',
                     usraulo_ipaddress: (req.headers['x-forwarded-for'] as string) || req.socket.remoteAddress || '127.0.0.1',
                     usraulo_useragent: req.headers['user-agent'] || 'Unknown',
@@ -427,7 +427,7 @@ export class AuthController {
 
             const { SequelizeApplication } = require('../../model/application/application.model');
             const appRecord = await SequelizeApplication.findOne({ where: { app_cod } });
-            const app_uuid = appRecord?.app_uuid || 'ATS_CENTRAL';
+            const app_uuid = appRecord?.app_uuid || 'Central';
 
             const logRepo = new SequelizeUserAuthLogRepository();
             const logVal = new UserAuthLogValue({
