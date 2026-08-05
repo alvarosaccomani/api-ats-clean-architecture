@@ -3,6 +3,9 @@ import { SequelizeTypeApplication } from './type-application/type-application.mo
 import { SequelizeApplicationSetting } from './application-setting/application-setting.model';
 import { SequelizeTicket } from './ticket/ticket.model';
 import { SequelizeUser } from './user/user.model';
+import { SequelizeRole } from './rol/rol.model';
+import { SequelizeAppResponsible } from './app-responsible/app-responsible.model';
+import { SequelizeTicketStatusLog } from './ticket-status-log/ticket-status-log.model';
 
 export function setupAssociations() {
   // Relación entre Aplicación y Tipo de Aplicación
@@ -33,5 +36,22 @@ export function setupAssociations() {
 
   SequelizeTicket.belongsTo(SequelizeApplication, { foreignKey: 'app_uuid', as: 'application' });
   SequelizeApplication.hasMany(SequelizeTicket, { foreignKey: 'app_uuid', as: 'tickets' });
+
+  // Relaciones para Responsables de Aplicación
+  SequelizeAppResponsible.belongsTo(SequelizeUser, { foreignKey: 'usr_uuid', as: 'user' });
+  SequelizeUser.hasMany(SequelizeAppResponsible, { foreignKey: 'usr_uuid', as: 'responsibilities' });
+
+  SequelizeAppResponsible.belongsTo(SequelizeApplication, { foreignKey: 'app_uuid', as: 'application' });
+  SequelizeApplication.hasMany(SequelizeAppResponsible, { foreignKey: 'app_uuid', as: 'responsibles' });
+
+  SequelizeAppResponsible.belongsTo(SequelizeRole, { foreignKey: 'rol_uuid', as: 'role' });
+  SequelizeRole.hasMany(SequelizeAppResponsible, { foreignKey: 'rol_uuid', as: 'responsibles' });
+
+  // Relaciones para Historial de Tickets (TicketStatusLog)
+  SequelizeTicket.hasMany(SequelizeTicketStatusLog, { foreignKey: 'tic_uuid', as: 'statusLogs' });
+  SequelizeTicketStatusLog.belongsTo(SequelizeTicket, { foreignKey: 'tic_uuid', as: 'ticket' });
+
+  SequelizeTicketStatusLog.belongsTo(SequelizeUser, { foreignKey: 'usr_uuid', as: 'operator' });
+  SequelizeUser.hasMany(SequelizeTicketStatusLog, { foreignKey: 'usr_uuid', as: 'operatorLogs' });
 }
 
