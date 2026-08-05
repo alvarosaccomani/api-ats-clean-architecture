@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { SequelizeUser } from '../model/user/user.model';
 
 export interface AuthenticatedRequest extends Request {
     user?: any;
@@ -38,4 +39,41 @@ export function ensureAuth(req: AuthenticatedRequest, res: Response, next: NextF
             error: 'Token inválido o expirado.'
         });
     }
+}
+
+export function ensureSysAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    ensureAuth(req, res, async () => {
+        if (req.user && req.user.usr_sysadmin === true) {
+            return next();
+        }
+
+        // Si no está en el token, consultar la DB en tiempo real (evita obligar a desloguearse)
+        try {
+            const userUuid = req.user?.sub;
+            if (!userUuid) {
+                return res.status(403).json({
+                    success: false,
+                    message: 'Acceso denegado.',
+                    error: 'Identificación de usuario no válida.'
+                });
+            }
+
+            const user = await SequelizeUser.findByPk(userUuid);
+            if (user && user.usr_sysadmin === true) {
+                return next();
+            }
+
+            return res.status(403).json({
+                success: false,
+                message: 'Acceso denegado.',
+                error: 'Esta acción requiere privilegios de Administrador del Sistema (sysadmin).'
+            });
+        } catch (dbError: any) {
+            return res.status(500).json({
+                success: false,
+                message: 'Error al verificar permisos.',
+                error: dbError.message
+            });
+        }
+    });
 }
