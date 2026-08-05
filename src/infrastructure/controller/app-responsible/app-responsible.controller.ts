@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { SequelizeAppResponsible } from "../../model/app-responsible/app-responsible.model";
 import { SequelizeUser } from "../../model/user/user.model";
-import { SequelizeRole } from "../../model/rol/rol.model";
+import { SequelizeRol } from "../../model/rol/rol.model";
 import { AppResponsibleValue } from "../../../domain/app-responsible/app-responsible.value";
 
 export class AppResponsibleController {
@@ -17,8 +17,8 @@ export class AppResponsibleController {
                         attributes: ['usr_uuid', 'usr_name', 'usr_surname', 'usr_email', 'usr_nick', 'usr_image'] 
                     },
                     { 
-                        model: SequelizeRole, 
-                        as: 'role', 
+                        model: SequelizeRol, 
+                        as: 'rol', 
                         attributes: ['rol_uuid', 'rol_name'] 
                     }
                 ],
@@ -82,8 +82,8 @@ export class AppResponsibleController {
                         attributes: ['usr_uuid', 'usr_name', 'usr_surname', 'usr_email', 'usr_nick', 'usr_image'] 
                     },
                     { 
-                        model: SequelizeRole, 
-                        as: 'role', 
+                        model: SequelizeRol, 
+                        as: 'rol', 
                         attributes: ['rol_uuid', 'rol_name'] 
                     }
                 ]

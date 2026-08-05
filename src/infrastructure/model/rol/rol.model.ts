@@ -2,14 +2,14 @@ import { DataTypes, Model } from 'sequelize';
 import { sequelize } from '../../db/sequelize';
 import { RolEntity } from "../../../domain/rol/rol.entity";
 
-export class SequelizeRole extends Model<RolEntity> {
+export class SequelizeRol extends Model<RolEntity> {
   declare rol_uuid: string;
   declare rol_name: string;
   declare rol_createdat: Date;
   declare rol_updatedat: Date;
 }
 
-SequelizeRole.init({
+SequelizeRol.init({
   rol_uuid: {
     type: DataTypes.STRING(40), 
     primaryKey: true
@@ -36,5 +36,5 @@ SequelizeRole.init({
 });
 
 if (process.env.NODE_ENV !== "production") {
-  SequelizeRole.sync();
+  SequelizeRol.sync();
 }

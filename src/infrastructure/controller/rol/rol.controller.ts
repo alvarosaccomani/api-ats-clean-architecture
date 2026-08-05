@@ -1,10 +1,10 @@
 import { Request, Response } from "express";
-import { SequelizeRole } from "../../model/rol/rol.model";
+import { SequelizeRol } from "../../model/rol/rol.model";
 
 export class RolController {
     public async getAllCtrl(req: Request, res: Response) {
         try {
-            const roles = await SequelizeRole.findAll({
+            const roles = await SequelizeRol.findAll({
                 order: [['rol_name', 'ASC']]
             });
             return res.status(200).json({

@@ -6,7 +6,7 @@ import { SystemEventLogger } from "../../services/system-event-logger.service";
 import { SequelizeAppResponsible } from "../../model/app-responsible/app-responsible.model";
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeApplication } from "../../model/application/application.model";
-import { SequelizeRole } from "../../model/rol/rol.model";
+import { SequelizeRol } from "../../model/rol/rol.model";
 import { SequelizeTicketStatusLog } from "../../model/ticket-status-log/ticket-status-log.model";
 import { emailService } from "../../services/email-service.service";
 import { TicketStatusLogValue } from "../../../domain/ticket-status-log/ticket-status-log.value";
@@ -168,7 +168,7 @@ export class TicketController {
                 where: { app_uuid: body.app_uuid },
                 include: [
                     { model: SequelizeUser, as: 'user', attributes: ['usr_email', 'usr_name', 'usr_surname'] },
-                    { model: SequelizeRole, as: 'role', attributes: ['rol_name'] }
+                    { model: SequelizeRol, as: 'rol', attributes: ['rol_name'] }
                 ]
             });
 

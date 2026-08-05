@@ -3,7 +3,7 @@ import { SequelizeTypeApplication } from './type-application/type-application.mo
 import { SequelizeApplicationSetting } from './application-setting/application-setting.model';
 import { SequelizeTicket } from './ticket/ticket.model';
 import { SequelizeUser } from './user/user.model';
-import { SequelizeRole } from './rol/rol.model';
+import { SequelizeRol } from './rol/rol.model';
 import { SequelizeAppResponsible } from './app-responsible/app-responsible.model';
 import { SequelizeTicketStatusLog } from './ticket-status-log/ticket-status-log.model';
 
@@ -44,8 +44,8 @@ export function setupAssociations() {
   SequelizeAppResponsible.belongsTo(SequelizeApplication, { foreignKey: 'app_uuid', as: 'application' });
   SequelizeApplication.hasMany(SequelizeAppResponsible, { foreignKey: 'app_uuid', as: 'responsibles' });
 
-  SequelizeAppResponsible.belongsTo(SequelizeRole, { foreignKey: 'rol_uuid', as: 'role' });
-  SequelizeRole.hasMany(SequelizeAppResponsible, { foreignKey: 'rol_uuid', as: 'responsibles' });
+  SequelizeAppResponsible.belongsTo(SequelizeRol, { foreignKey: 'rol_uuid', as: 'rol' });
+  SequelizeRol.hasMany(SequelizeAppResponsible, { foreignKey: 'rol_uuid', as: 'responsibles' });
 
   // Relaciones para Historial de Tickets (TicketStatusLog)
   SequelizeTicket.hasMany(SequelizeTicketStatusLog, { foreignKey: 'tic_uuid', as: 'statusLogs' });
