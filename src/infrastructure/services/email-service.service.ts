@@ -163,6 +163,29 @@ export class EmailService {
 
         await this.transporter.sendMail(mailOptions);
     }
+
+    /**
+     * Envía un correo genérico con plantilla corporativa.
+     */
+    async sendEmail(
+        to: string, 
+        subject: string, 
+        title: string, 
+        contentHtml: string, 
+        ctaText?: string, 
+        ctaUrl?: string, 
+        app?: any, 
+        settings?: Record<string, string>
+    ): Promise<void> {
+        const mailOptions = {
+            from: process.env.EMAIL_FROM,
+            to,
+            subject,
+            html: this.getEmailTemplate(title, contentHtml, ctaText, ctaUrl, app, settings),
+        };
+
+        await this.transporter.sendMail(mailOptions);
+    }
 }
 
 export const emailService = new EmailService();
