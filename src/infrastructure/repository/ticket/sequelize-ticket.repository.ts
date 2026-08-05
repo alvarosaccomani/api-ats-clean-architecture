@@ -3,6 +3,7 @@ import { TicketRepository } from "../../../domain/ticket/ticket.repository";
 import { SequelizeTicket } from "../../model/ticket/ticket.model";
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeApplication } from "../../model/application/application.model";
+import { SequelizeTicketStatusLog } from "../../model/ticket-status-log/ticket-status-log.model";
 
 export class SequelizeTicketRepository implements TicketRepository {
     async createTicket(ticket: TicketEntity): Promise<TicketEntity | null> {
@@ -44,8 +45,18 @@ export class SequelizeTicketRepository implements TicketRepository {
             const ticket = await SequelizeTicket.findOne({
                 where: { tic_uuid: tic_uuid ?? null },
                 include: [
-                    { model: SequelizeUser, as: 'user' },
-                    { model: SequelizeApplication, as: 'application' }
+                    { model: SequelizeUser, as: 'user', attributes: ['usr_uuid', 'usr_name', 'usr_surname', 'usr_email', 'usr_nick'] },
+                    { model: SequelizeApplication, as: 'application', attributes: ['app_uuid', 'app_cod', 'app_name', 'app_url'] },
+                    {
+                        model: SequelizeTicketStatusLog,
+                        as: 'statusLogs',
+                        include: [
+                            { model: SequelizeUser, as: 'operator', attributes: ['usr_uuid', 'usr_name', 'usr_surname', 'usr_email', 'usr_nick'] }
+                        ]
+                    }
+                ],
+                order: [
+                    [{ model: SequelizeTicketStatusLog, as: 'statusLogs' }, 'ticstlo_createdat', 'ASC']
                 ]
             });
             return ticket;
