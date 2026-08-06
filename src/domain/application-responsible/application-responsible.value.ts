@@ -1,5 +1,5 @@
 import { v4 as uuid } from "uuid";
-import { AppResponsibleEntity } from "./app-responsible.entity";
+import { AppResponsibleEntity } from "./application-responsible.entity";
 
 export class AppResponsibleValue implements AppResponsibleEntity {
     appres_uuid: string;

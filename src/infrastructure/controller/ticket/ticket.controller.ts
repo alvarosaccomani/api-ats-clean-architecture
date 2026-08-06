@@ -3,7 +3,7 @@ import { TicketUseCase } from "../../../application/ticket/ticket-use-case";
 import SocketAdapter from "../../services/socketAdapter";
 import { paginator } from "../../services/paginator.service";
 import { SystemEventLogger } from "../../services/system-event-logger.service";
-import { SequelizeAppResponsible } from "../../model/app-responsible/app-responsible.model";
+import { SequelizeAppResponsible } from "../../model/application-responsible/application-responsible.model";
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeApplication } from "../../model/application/application.model";
 import { SequelizeRol } from "../../model/rol/rol.model";

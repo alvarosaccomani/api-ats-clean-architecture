@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { SequelizeAppResponsible } from "../../model/app-responsible/app-responsible.model";
+import { SequelizeAppResponsible } from "../../model/application-responsible/application-responsible.model";
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeRol } from "../../model/rol/rol.model";
-import { AppResponsibleValue } from "../../../domain/app-responsible/app-responsible.value";
+import { AppResponsibleValue } from "../../../domain/application-responsible/application-responsible.value";
 
 export class AppResponsibleController {
     public async getResponsiblesCtrl(req: Request, res: Response) {
