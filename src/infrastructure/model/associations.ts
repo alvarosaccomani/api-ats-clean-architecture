@@ -4,8 +4,11 @@ import { SequelizeApplicationSetting } from './application-setting/application-s
 import { SequelizeTicket } from './ticket/ticket.model';
 import { SequelizeUser } from './user/user.model';
 import { SequelizeRol } from './rol/rol.model';
-import { SequelizeAppResponsible } from './app-responsible/app-responsible.model';
+import { SequelizeAppResponsible } from './application-responsible/application-responsible.model';
 import { SequelizeTicketStatusLog } from './ticket-status-log/ticket-status-log.model';
+import { SequelizeAppUpdate } from './application-update/application-update.model';
+import { SequelizeAppBackup } from './application-backup/application-backup.model';
+import { SequelizeAppMaintenance } from './application-maintenance/application-maintenance.model';
 
 export function setupAssociations() {
   // Relación entre Aplicación y Tipo de Aplicación
@@ -53,5 +56,21 @@ export function setupAssociations() {
 
   SequelizeTicketStatusLog.belongsTo(SequelizeUser, { foreignKey: 'usr_uuid', as: 'operator' });
   SequelizeUser.hasMany(SequelizeTicketStatusLog, { foreignKey: 'usr_uuid', as: 'operatorLogs' });
+
+  // Relaciones para Bitácora de Mantenimiento de Apps
+  SequelizeApplication.hasMany(SequelizeAppUpdate, { foreignKey: 'app_uuid', as: 'updates' });
+  SequelizeAppUpdate.belongsTo(SequelizeApplication, { foreignKey: 'app_uuid', as: 'application' });
+  SequelizeAppUpdate.belongsTo(SequelizeUser, { foreignKey: 'usr_uuid', as: 'user' });
+  SequelizeUser.hasMany(SequelizeAppUpdate, { foreignKey: 'usr_uuid', as: 'updates' });
+
+  SequelizeApplication.hasMany(SequelizeAppBackup, { foreignKey: 'app_uuid', as: 'backups' });
+  SequelizeAppBackup.belongsTo(SequelizeApplication, { foreignKey: 'app_uuid', as: 'application' });
+  SequelizeAppBackup.belongsTo(SequelizeUser, { foreignKey: 'usr_uuid', as: 'user' });
+  SequelizeUser.hasMany(SequelizeAppBackup, { foreignKey: 'usr_uuid', as: 'backups' });
+
+  SequelizeApplication.hasMany(SequelizeAppMaintenance, { foreignKey: 'app_uuid', as: 'maintenances' });
+  SequelizeAppMaintenance.belongsTo(SequelizeApplication, { foreignKey: 'app_uuid', as: 'application' });
+  SequelizeAppMaintenance.belongsTo(SequelizeUser, { foreignKey: 'usr_uuid', as: 'user' });
+  SequelizeUser.hasMany(SequelizeAppMaintenance, { foreignKey: 'usr_uuid', as: 'maintenances' });
 }
 
