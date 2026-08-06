@@ -47,7 +47,7 @@ SequelizeAppResponsible.init({
   timestamps: true,
   createdAt: 'appres_createdat',
   updatedAt: 'appres_updatedat',
-  tableName: 'appres_ApplicationResponsibles'
+  tableName: 'appres_applicationresponsibles'
 });
 
 if (process.env.NODE_ENV !== "production") {
