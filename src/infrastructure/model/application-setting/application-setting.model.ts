@@ -70,7 +70,7 @@ SequelizeApplicationSetting.init({
   timestamps: true,
   createdAt: 'apps_createdat',
   updatedAt: 'apps_updatedat',
-  tableName: 'app_applicationssettings'
+  tableName: 'apps_applicationssettings'
 });
 
 // Sincronizar (solo en desarrollo)
