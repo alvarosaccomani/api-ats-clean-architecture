@@ -10,6 +10,7 @@ function configureApplicationSettingRoutes(app: Express) {
     const controller = new ApplicationSettingController(useCase);
     
     app.get(`/${process.env.BASE_URL_API}/application/:app_uuid/settings`, ensureAuth, controller.getSettingsByAppCtrl);
+    app.post(`/${process.env.BASE_URL_API}/application/:app_uuid/settings/adjust`, ensureAuth, controller.adjustSettingsCtrl);
     app.post(`/${process.env.BASE_URL_API}/application/:app_uuid/settings`, ensureAuth, controller.saveSettingCtrl);
     app.put(`/${process.env.BASE_URL_API}/application/:app_uuid/settings/:apps_uuid`, ensureAuth, controller.updateSettingCtrl);
     app.delete(`/${process.env.BASE_URL_API}/application/:app_uuid/settings/:apps_uuid`, ensureAuth, controller.deleteSettingCtrl);

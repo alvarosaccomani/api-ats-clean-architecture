@@ -11,6 +11,7 @@ export class ApplicationSettingController {
         this.saveSettingCtrl = this.saveSettingCtrl.bind(this);
         this.updateSettingCtrl = this.updateSettingCtrl.bind(this);
         this.deleteSettingCtrl = this.deleteSettingCtrl.bind(this);
+        this.adjustSettingsCtrl = this.adjustSettingsCtrl.bind(this);
     }
 
     public async getSettingsByAppCtrl(req: Request, res: Response) {
@@ -139,6 +140,42 @@ export class ApplicationSettingController {
             return res.status(400).json({
                 success: false,
                 message: 'No se pudo eliminar la configuración.',
+                error: error.message
+            });
+        }
+    }
+
+    public async adjustSettingsCtrl(req: Request, res: Response) {
+        try {
+            const { app_uuid } = req.params;
+            const { settings } = req.body;
+
+            if (!Array.isArray(settings)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Payload inválido.',
+                    error: 'Se esperaba un array de configuraciones en la propiedad settings.'
+                });
+            }
+
+            const savedSettings = await this.settingUseCase.adjustSettings(app_uuid, settings);
+
+            // Registrar evento de auditoría unificado
+            await SystemEventLogger.log(req, 'SETTINGS_ADJUSTED', 'ApplicationSetting', app_uuid, {
+                app_uuid,
+                count: savedSettings.length
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'Configuraciones ajustadas y guardadas correctamente.',
+                data: savedSettings
+            });
+        } catch (error: any) {
+            console.error('Error en adjustSettingsCtrl (controller):', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudieron ajustar las configuraciones.',
                 error: error.message
             });
         }
