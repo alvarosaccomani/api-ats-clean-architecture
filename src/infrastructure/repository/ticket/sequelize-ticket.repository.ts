@@ -6,9 +6,11 @@ import { SequelizeApplication } from "../../model/application/application.model"
 import { SequelizeTicketStatusLog } from "../../model/ticket-status-log/ticket-status-log.model";
 
 export class SequelizeTicketRepository implements TicketRepository {
-    async createTicket(ticket: TicketEntity): Promise<TicketEntity | null> {
+    async createTicket(ticket: TicketEntity, options?: { transaction?: any }): Promise<TicketEntity | null> {
         try {
-            const created = await SequelizeTicket.create(ticket as any);
+            const created = await SequelizeTicket.create(ticket as any, {
+                transaction: options?.transaction
+            });
             return created;
         } catch (error: any) {
             console.error('Error en createTicket:', error.message);
@@ -16,7 +18,7 @@ export class SequelizeTicketRepository implements TicketRepository {
         }
     }
 
-    async getTickets(filter?: { status?: string, type?: string, app_uuid?: string, usr_uuid?: string }): Promise<TicketEntity[] | null> {
+    async getTickets(filter?: { status?: string, type?: string, app_uuid?: string, usr_uuid?: string }, options?: { transaction?: any }): Promise<TicketEntity[] | null> {
         try {
             const whereClause: any = {};
             if (filter) {
@@ -31,7 +33,8 @@ export class SequelizeTicketRepository implements TicketRepository {
                     { model: SequelizeUser, as: 'user', attributes: ['usr_uuid', 'usr_name', 'usr_surname', 'usr_email', 'usr_nick'] },
                     { model: SequelizeApplication, as: 'application', attributes: ['app_uuid', 'app_cod', 'app_name'] }
                 ],
-                order: [['tic_createdat', 'DESC']]
+                order: [['tic_createdat', 'DESC']],
+                transaction: options?.transaction
             });
             return tickets;
         } catch (error: any) {
@@ -40,7 +43,7 @@ export class SequelizeTicketRepository implements TicketRepository {
         }
     }
 
-    async findTicketById(tic_uuid: string): Promise<TicketEntity | null> {
+    async findTicketById(tic_uuid: string, options?: { transaction?: any }): Promise<TicketEntity | null> {
         try {
             const ticket = await SequelizeTicket.findOne({
                 where: { tic_uuid: tic_uuid ?? null },
@@ -57,7 +60,8 @@ export class SequelizeTicketRepository implements TicketRepository {
                 ],
                 order: [
                     [{ model: SequelizeTicketStatusLog, as: 'statusLogs' }, 'ticstlo_createdat', 'ASC']
-                ]
+                ],
+                transaction: options?.transaction
             });
             return ticket;
         } catch (error: any) {
@@ -66,15 +70,18 @@ export class SequelizeTicketRepository implements TicketRepository {
         }
     }
 
-    async updateTicket(tic_uuid: string, updateData: TicketUpdateData): Promise<TicketEntity | null> {
+    async updateTicket(tic_uuid: string, updateData: TicketUpdateData, options?: { transaction?: any }): Promise<TicketEntity | null> {
         try {
             const [updatedRows] = await SequelizeTicket.update(updateData, {
-                where: { tic_uuid }
+                where: { tic_uuid },
+                transaction: options?.transaction
             });
             if (updatedRows === 0) {
                 throw new Error(`No se pudo actualizar el ticket con Id: ${tic_uuid}`);
             }
-            const updated = await SequelizeTicket.findByPk(tic_uuid);
+            const updated = await SequelizeTicket.findByPk(tic_uuid, {
+                transaction: options?.transaction
+            });
             return updated;
         } catch (error: any) {
             console.error('Error en updateTicket:', error.message);
@@ -82,14 +89,15 @@ export class SequelizeTicketRepository implements TicketRepository {
         }
     }
 
-    async deleteTicket(tic_uuid: string): Promise<TicketEntity | null> {
+    async deleteTicket(tic_uuid: string, options?: { transaction?: any }): Promise<TicketEntity | null> {
         try {
-            const ticket = await this.findTicketById(tic_uuid);
+            const ticket = await this.findTicketById(tic_uuid, options);
             if (!ticket) {
                 throw new Error(`No se encontró el ticket con Id: ${tic_uuid}`);
             }
             await SequelizeTicket.destroy({
-                where: { tic_uuid }
+                where: { tic_uuid },
+                transaction: options?.transaction
             });
             return ticket;
         } catch (error: any) {
