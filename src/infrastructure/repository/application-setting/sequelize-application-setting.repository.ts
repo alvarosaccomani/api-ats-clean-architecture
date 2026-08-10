@@ -4,10 +4,11 @@ import { SequelizeApplicationSetting } from "../../model/application-setting/app
 import { Op } from "sequelize";
 
 export class SequelizeApplicationSettingRepository implements ApplicationSettingRepository {
-    async getCompaniesSettings(app_uuid: string): Promise<ApplicationSettingEntity[] | null> {
+    async getCompaniesSettings(app_uuid: string, options?: { transaction?: any }): Promise<ApplicationSettingEntity[] | null> {
         try {
             const settings = await SequelizeApplicationSetting.findAll({
-                where: { app_uuid }
+                where: { app_uuid },
+                transaction: options?.transaction
             });
             return settings.map(s => s.dataValues as ApplicationSettingEntity);
         } catch (error: any) {
@@ -16,10 +17,11 @@ export class SequelizeApplicationSettingRepository implements ApplicationSetting
         }
     }
 
-    async findApplicationSettingById(app_uuid: string, apps_uuid: string): Promise<ApplicationSettingEntity | null> {
+    async findApplicationSettingById(app_uuid: string, apps_uuid: string, options?: { transaction?: any }): Promise<ApplicationSettingEntity | null> {
         try {
             const setting = await SequelizeApplicationSetting.findOne({
-                where: { app_uuid, apps_uuid }
+                where: { app_uuid, apps_uuid },
+                transaction: options?.transaction
             });
             return setting ? (setting.dataValues as ApplicationSettingEntity) : null;
         } catch (error: any) {
@@ -28,10 +30,12 @@ export class SequelizeApplicationSettingRepository implements ApplicationSetting
         }
     }
 
-    async createApplicationSetting(applicationSetting: ApplicationSettingEntity): Promise<ApplicationSettingEntity | null> {
+    async createApplicationSetting(applicationSetting: ApplicationSettingEntity, options?: { transaction?: any }): Promise<ApplicationSettingEntity | null> {
         try {
             const result = await SequelizeApplicationSetting.create({
                 ...applicationSetting
+            }, {
+                transaction: options?.transaction
             });
             return result ? (result.dataValues as ApplicationSettingEntity) : null;
         } catch (error: any) {
@@ -40,15 +44,18 @@ export class SequelizeApplicationSettingRepository implements ApplicationSetting
         }
     }
 
-    async updateApplicationSetting(app_uuid: string, apps_uuid: string, applicationSetting: ApplicationSettingUpdateData): Promise<ApplicationSettingEntity | null> {
+    async updateApplicationSetting(app_uuid: string, apps_uuid: string, applicationSetting: ApplicationSettingUpdateData, options?: { transaction?: any }): Promise<ApplicationSettingEntity | null> {
         try {
             const [rowsUpdated] = await SequelizeApplicationSetting.update(
                 { ...applicationSetting },
-                { where: { app_uuid, apps_uuid } }
+                { 
+                    where: { app_uuid, apps_uuid },
+                    transaction: options?.transaction
+                }
             );
 
             if (rowsUpdated > 0) {
-                return this.findApplicationSettingById(app_uuid, apps_uuid);
+                return this.findApplicationSettingById(app_uuid, apps_uuid, options);
             }
             return null;
         } catch (error: any) {
@@ -57,12 +64,13 @@ export class SequelizeApplicationSettingRepository implements ApplicationSetting
         }
     }
 
-    async deleteApplicationSetting(app_uuid: string, apps_uuid: string): Promise<ApplicationSettingEntity | null> {
+    async deleteApplicationSetting(app_uuid: string, apps_uuid: string, options?: { transaction?: any }): Promise<ApplicationSettingEntity | null> {
         try {
-            const setting = await this.findApplicationSettingById(app_uuid, apps_uuid);
+            const setting = await this.findApplicationSettingById(app_uuid, apps_uuid, options);
             if (setting) {
                 await SequelizeApplicationSetting.destroy({
-                    where: { app_uuid, apps_uuid }
+                    where: { app_uuid, apps_uuid },
+                    transaction: options?.transaction
                 });
                 return setting;
             }
@@ -73,7 +81,7 @@ export class SequelizeApplicationSettingRepository implements ApplicationSetting
         }
     }
 
-    async findApplicationSettingByKey(app_uuid: string, apps_key: string, excludeUuid?: string | null): Promise<ApplicationSettingEntity | null> {
+    async findApplicationSettingByKey(app_uuid: string, apps_key: string, excludeUuid?: string | null, options?: { transaction?: any }): Promise<ApplicationSettingEntity | null> {
         try {
             const whereClause: any = {
                 app_uuid,
@@ -85,7 +93,8 @@ export class SequelizeApplicationSettingRepository implements ApplicationSetting
             }
 
             const setting = await SequelizeApplicationSetting.findOne({
-                where: whereClause
+                where: whereClause,
+                transaction: options?.transaction
             });
             return setting ? (setting.dataValues as ApplicationSettingEntity) : null;
         } catch (error: any) {
