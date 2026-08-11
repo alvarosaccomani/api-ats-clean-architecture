@@ -7,9 +7,7 @@ import { SequelizeAppResponsible } from "../../model/application-responsible/app
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeApplication } from "../../model/application/application.model";
 import { SequelizeRol } from "../../model/rol/rol.model";
-import { SequelizeTicketStatusLog } from "../../model/ticket-status-log/ticket-status-log.model";
 import { emailService } from "../../services/email-service.service";
-import { TicketStatusLogValue } from "../../../domain/ticket-status-log/ticket-status-log.value";
 
 export class TicketController {
     constructor(private ticketUseCase: TicketUseCase, private socketAdapter: SocketAdapter) {
@@ -137,20 +135,6 @@ export class TicketController {
             // Emitir evento por sockets en tiempo real
             this.socketAdapter.emitEvent('ticket_created', ticket);
 
-            // Registrar el log de estado inicial del ticket
-            try {
-                const initialStatusLog = new TicketStatusLogValue({
-                    tic_uuid: ticket.tic_uuid,
-                    usr_uuid: usr_uuid || '', // Usuario creador
-                    ticstlo_oldstatus: null,
-                    ticstlo_newstatus: ticket.tic_status || 'PENDING',
-                    ticstlo_admincomment: 'Reporte registrado en la plataforma.'
-                });
-                await SequelizeTicketStatusLog.create(initialStatusLog as any);
-            } catch (logError: any) {
-                console.error('Error registrando log de estado inicial:', logError.message);
-            }
-
             // Guardar registro de auditoría
             await SystemEventLogger.log(req, 'TICKET_CREATED', 'Ticket', ticket.tic_uuid, {
                 tic_title: ticket.tic_title,
@@ -250,27 +234,14 @@ export class TicketController {
             }
 
             const oldStatus = ticketBefore.tic_status;
-            const ticket = await this.ticketUseCase.updateTicket(tic_uuid, body);
+            const ticket = await this.ticketUseCase.updateTicket(tic_uuid, body, operatorUuid);
 
             if (!ticket) {
                 throw new Error('No se pudo actualizar el ticket.');
             }
 
-            // 2. Registrar el log de auditoría si cambió el estado
+            // 2. Notificar al usuario creador si cambió el estado
             if (body.tic_status && body.tic_status !== oldStatus) {
-                try {
-                    const statusLog = new TicketStatusLogValue({
-                        tic_uuid: tic_uuid,
-                        usr_uuid: operatorUuid || ticket.usr_uuid || '', // Operador que hizo el cambio
-                        ticstlo_oldstatus: oldStatus,
-                        ticstlo_newstatus: ticket.tic_status || '',
-                        ticstlo_admincomment: body.tic_admincomment || body.tic_AdminComment || ticket.tic_admincomment || null
-                    });
-                    await SequelizeTicketStatusLog.create(statusLog as any);
-                } catch (logError: any) {
-                    console.error('Error registrando log de cambio de estado:', logError.message);
-                }
-
                 // 3. Si el estado nuevo es RESOLVED, CLOSED o CANCELLED (anulado), notificar al usuario creador
                 const targetStatus = ticket.tic_status;
                 if (targetStatus === 'RESOLVED' || targetStatus === 'CLOSED' || targetStatus === 'CANCELLED') {
