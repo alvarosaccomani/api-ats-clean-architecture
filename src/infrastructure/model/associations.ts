@@ -9,6 +9,8 @@ import { SequelizeTicketStatusLog } from './ticket-status-log/ticket-status-log.
 import { SequelizeAppUpdate } from './application-update/application-update.model';
 import { SequelizeAppBackup } from './application-backup/application-backup.model';
 import { SequelizeAppMaintenance } from './application-maintenance/application-maintenance.model';
+import { SequelizeSubscription } from './subscription/subscription.model';
+import { SequelizeCompany } from './company/company.model';
 
 export function setupAssociations() {
   // Relación entre Aplicación y Tipo de Aplicación
@@ -72,5 +74,9 @@ export function setupAssociations() {
   SequelizeAppMaintenance.belongsTo(SequelizeApplication, { foreignKey: 'app_uuid', as: 'application' });
   SequelizeAppMaintenance.belongsTo(SequelizeUser, { foreignKey: 'usr_uuid', as: 'user' });
   SequelizeUser.hasMany(SequelizeAppMaintenance, { foreignKey: 'usr_uuid', as: 'maintenances' });
+
+  // Relaciones inversas para consultar suscripciones por usuario o empresa
+  SequelizeUser.hasMany(SequelizeSubscription, { foreignKey: 'usr_uuid', as: 'subscriptions' });
+  SequelizeCompany.hasMany(SequelizeSubscription, { foreignKey: 'cmp_uuid', as: 'subscriptions' });
 }
 
