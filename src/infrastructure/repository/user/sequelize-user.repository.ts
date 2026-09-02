@@ -2,13 +2,58 @@ import * as bcrypt from "bcryptjs";
 import { UserEntity, UserUpdateData } from "../../../domain/user/user.entity";
 import { UserRepository } from "../../../domain/user/user.repository";
 import { SequelizeUser } from "../../model/user/user.model";
+import { SequelizeSubscription } from "../../model/subscription/subscription.model";
+import { SequelizeApplication } from "../../model/application/application.model";
+import { SequelizeTypeApplication } from "../../model/type-application/type-application.model";
+import { SequelizeCompany } from "../../model/company/company.model";
 import { Op } from 'sequelize';
 import { DbErrorHandler } from '../../utils/db-error-handler';
 
 export class SequelizeRepository implements UserRepository {
     async getUsers(): Promise<UserEntity[] | null> {
         try {
-            const users = await SequelizeUser.findAll();
+            const users = await SequelizeUser.findAll({
+                include: [
+                    {
+                        model: SequelizeSubscription,
+                        as: 'subscriptions',
+                        include: [
+                            {
+                                model: SequelizeApplication,
+                                as: 'application',
+                                include: [
+                                    {
+                                        model: SequelizeTypeApplication,
+                                        as: 'typeApplication'
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        model: SequelizeCompany,
+                        as: 'companies',
+                        include: [
+                            {
+                                model: SequelizeSubscription,
+                                as: 'subscriptions',
+                                include: [
+                                    {
+                                        model: SequelizeApplication,
+                                        as: 'application',
+                                        include: [
+                                            {
+                                                model: SequelizeTypeApplication,
+                                                as: 'typeApplication'
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            });
             if(!users) {
                 throw new Error(`No hay usuarios`);
             };
