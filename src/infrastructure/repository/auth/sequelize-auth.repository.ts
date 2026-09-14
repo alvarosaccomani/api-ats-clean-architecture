@@ -3,6 +3,10 @@ import { UserEntity } from "../../../domain/user/user.entity";
 import { AuthRepository } from "../../../domain/auth/auth.repository";
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeApplication } from "../../model/application/application.model";
+import { SequelizeUserCompany } from "../../model/user-company/user-company.model";
+import { SequelizeCompany } from "../../model/company/company.model";
+import { SequelizeSubscription } from "../../model/subscription/subscription.model";
+import { SequelizePlan } from "../../model/plan/plan.model";
 import { createToken } from "../../services/jwt.service";
 import { AuthService } from '../../services/auth-service.service';
 import { emailService } from '../../services/email-service.service';
@@ -225,6 +229,159 @@ export class SequelizeAuthRepository implements AuthRepository {
             );
         } catch (error) {
             throw new Error('Error al actualizar la contraseña.');
+        }
+    }
+
+    async checkUserAppAccess(userIdentifier: string, app_cod: string): Promise<any> {
+        try {
+            const user = await SequelizeUser.findOne({
+                where: {
+                    [Op.or]: [
+                        { usr_uuid: userIdentifier },
+                        { usr_email: userIdentifier },
+                        { usr_nick: userIdentifier }
+                    ]
+                },
+                attributes: { exclude: ['usr_password'] }
+            });
+
+            if (!user) {
+                return {
+                    userExists: false,
+                    hasAccess: false,
+                    reason: `No se encontró ningún usuario con el identificador '${userIdentifier}'.`,
+                    user: null,
+                    app: null,
+                    stores: []
+                };
+            }
+
+            const app = await SequelizeApplication.findOne({
+                where: { app_cod: app_cod }
+            });
+
+            if (!app) {
+                return {
+                    userExists: true,
+                    hasAccess: false,
+                    reason: `La aplicación con código '${app_cod}' no existe en el sistema.`,
+                    user: {
+                        usr_uuid: user.usr_uuid,
+                        usr_nick: user.usr_nick,
+                        usr_email: user.usr_email,
+                        usr_name: user.usr_name,
+                        usr_surname: user.usr_surname,
+                        usr_sysadmin: !!user.usr_sysadmin
+                    },
+                    app: null,
+                    stores: []
+                };
+            }
+
+            const userCompanies = await SequelizeUserCompany.findAll({
+                where: {
+                    usr_uuid: user.usr_uuid,
+                    usrcmp_active: true
+                },
+                include: [
+                    {
+                        model: SequelizeCompany,
+                        as: 'company',
+                        where: { cmp_active: true }
+                    }
+                ]
+            });
+
+            const stores: any[] = [];
+            for (const item of userCompanies) {
+                const cmp = (item as any).company;
+                if (!cmp) continue;
+
+                const sub = await SequelizeSubscription.findOne({
+                    where: {
+                        sub_subscribertype: 'COMPANY',
+                        cmp_uuid: cmp.cmp_uuid,
+                        app_uuid: app.app_uuid,
+                        sub_active: true
+                    },
+                    include: [
+                        { model: SequelizePlan, as: 'plan' }
+                    ]
+                });
+
+                if (sub) {
+                    stores.push({
+                        cmp_uuid: cmp.cmp_uuid,
+                        cmp_cod: cmp.cmp_cod,
+                        cmp_name: cmp.cmp_name,
+                        cmp_cuit: cmp.cmp_cuit,
+                        cmp_address: cmp.cmp_address,
+                        cmp_phone: cmp.cmp_phone,
+                        cmp_email: cmp.cmp_email,
+                        usrcmp_role: item.usrcmp_role,
+                        subscription: {
+                            sub_uuid: sub.sub_uuid,
+                            sub_status: sub.sub_status,
+                            sub_startsat: sub.sub_startsat,
+                            sub_endsat: sub.sub_endsat,
+                            plan_name: (sub as any).plan?.pla_name || 'N/A'
+                        }
+                    });
+                }
+            }
+
+            const directSub = await SequelizeSubscription.findOne({
+                where: {
+                    sub_subscribertype: 'USER',
+                    usr_uuid: user.usr_uuid,
+                    app_uuid: app.app_uuid,
+                    sub_active: true
+                }
+            });
+
+            let hasAccess = false;
+            let accessType = 'NO_ACCESS';
+            let reason = 'El usuario no posee suscripciones activas para esta aplicación.';
+
+            if (user.usr_sysadmin) {
+                hasAccess = true;
+                accessType = 'SYSADMIN';
+                reason = 'Acceso concedido por privilegio de Administrador Global (SysAdmin).';
+            } else if (directSub) {
+                hasAccess = true;
+                accessType = 'DIRECT_SUBSCRIPTION';
+                reason = 'Acceso concedido por suscripción directa de usuario.';
+            } else if (stores.length > 0) {
+                hasAccess = true;
+                accessType = 'COMPANY_SUBSCRIPTION';
+                reason = `Acceso concedido a través de ${stores.length} tienda(s)/empresa(s) asociada(s).`;
+            }
+
+            return {
+                userExists: true,
+                hasAccess,
+                accessType,
+                reason,
+                user: {
+                    usr_uuid: user.usr_uuid,
+                    usr_nick: user.usr_nick,
+                    usr_email: user.usr_email,
+                    usr_name: user.usr_name,
+                    usr_surname: user.usr_surname,
+                    usr_sysadmin: !!user.usr_sysadmin
+                },
+                app: {
+                    app_uuid: app.app_uuid,
+                    app_cod: app.app_cod,
+                    app_name: app.app_name,
+                    app_url: app.app_url,
+                    app_active: app.app_active
+                },
+                stores
+            };
+        } catch (error: any) {
+            console.error('Error en checkUserAppAccess:', error.message);
+            throw error;
         }
     }
 }

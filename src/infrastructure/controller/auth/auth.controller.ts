@@ -24,6 +24,7 @@ export class AuthController {
         this.getAppConfigCtrl = this.getAppConfigCtrl.bind(this);
         this.confirmForceCtrl = this.confirmForceCtrl.bind(this);
         this.logAuthCtrl = this.logAuthCtrl.bind(this);
+        this.checkUserAppAccessCtrl = this.checkUserAppAccessCtrl.bind(this);
     }
 
     public async loginCtrl(req: Request, res: Response) {
@@ -443,6 +444,43 @@ export class AuthController {
         } catch (error: any) {
             console.error('Error en logAuthCtrl:', error.message);
             return res.status(500).json({ success: false, error: error.message });
+        }
+    }
+
+    public async checkUserAppAccessCtrl(req: Request, res: Response) {
+        try {
+            const { app_cod, user_identifier } = req.params;
+            const authenticatedUser = (req as any).user;
+
+            const targetUser = user_identifier || (req.query.user_identifier as string) || (req.query.user as string) || authenticatedUser?.sub || authenticatedUser?.usr_uuid;
+
+            if (!app_cod) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'El código de aplicación (app_cod) es requerido.'
+                });
+            }
+
+            if (!targetUser) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Debe proporcionar un identificador de usuario o enviar un token de autenticación válido.'
+                });
+            }
+
+            const result = await this.authUseCase.checkUserAppAccess(targetUser, app_cod);
+            return res.status(200).json({
+                success: true,
+                message: 'Verificación de acceso y tiendas asociadas completada.',
+                data: result
+            });
+        } catch (error: any) {
+            console.error('Error en checkUserAppAccessCtrl:', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'No se pudo realizar la verificación de acceso.',
+                error: error.message
+            });
         }
     }
 }

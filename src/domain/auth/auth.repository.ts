@@ -9,5 +9,6 @@ export interface AuthRepository {
     findUserByNick(usr_nick: string): Promise<UserEntity | null>;
     findUserByEmail(usr_email: string): Promise<UserEntity | null>;
     updatePassword(usr_uuid: string, newPassword: string): Promise<void>;
+    checkUserAppAccess(userIdentifier: string, app_cod: string): Promise<any>;
 }
 

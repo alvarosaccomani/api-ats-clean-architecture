@@ -4,7 +4,7 @@ import { AuthUseCase } from "../../../application/auth/auth-use-case";
 import { AuthController } from "../../../infrastructure/controller/auth/auth.controller";
 import SocketAdapter from "../../services/socketAdapter";
 
-import { ensureAuth } from "../../middleware/auth.middleware";
+import { ensureAuth, optionalAuth } from "../../middleware/auth.middleware";
 
 function configureAuthRoutes(app: Express, socketAdapter: SocketAdapter) {
     /*
@@ -40,6 +40,10 @@ function configureAuthRoutes(app: Express, socketAdapter: SocketAdapter) {
     app.get(`/${process.env.BASE_URL_API}/auth/sso/config/:app_cod`, authCtrl.getAppConfigCtrl);
     app.post(`/${process.env.BASE_URL_API}/auth/sso/confirm-force`, authCtrl.confirmForceCtrl);
     app.post(`/${process.env.BASE_URL_API}/auth/sso/log-auth`, authCtrl.logAuthCtrl);
+    
+    // Check Access & Stores Endpoints (para apps satélites como GUVA)
+    app.get(`/${process.env.BASE_URL_API}/auth/check-access/:app_cod`, optionalAuth, authCtrl.checkUserAppAccessCtrl);
+    app.get(`/${process.env.BASE_URL_API}/auth/check-access/:app_cod/:user_identifier`, optionalAuth, authCtrl.checkUserAppAccessCtrl);
 }
 
 export default configureAuthRoutes;

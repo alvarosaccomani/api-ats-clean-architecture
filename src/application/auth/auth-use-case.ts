@@ -13,6 +13,7 @@ export class AuthUseCase {
         this.userNickExist = this.userNickExist.bind(this);
         this.userEmailExist = this.userEmailExist.bind(this);
         this.registerUser = this.registerUser.bind(this);
+        this.checkUserAppAccess = this.checkUserAppAccess.bind(this);
     }
 
     public async loginUser(usr_nick: string, usr_password: string, gettoken: boolean) {
@@ -116,6 +117,15 @@ export class AuthUseCase {
             };
         } catch (error: any) {
             console.error('Error en registerUser (use case):', error.message);
+            throw error;
+        }
+    }
+
+    public async checkUserAppAccess(userIdentifier: string, app_cod: string) {
+        try {
+            return await this.authRepository.checkUserAppAccess(userIdentifier, app_cod);
+        } catch (error: any) {
+            console.error('Error en checkUserAppAccess (use case):', error.message);
             throw error;
         }
     }
