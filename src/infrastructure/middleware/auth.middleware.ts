@@ -41,6 +41,24 @@ export function ensureAuth(req: AuthenticatedRequest, res: Response, next: NextF
     }
 }
 
+export function optionalAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.split(' ')[1];
+        const secret = process.env.JWT_SECRET || 'web_app_atssuite_api';
+
+        try {
+            const decoded = jwt.verify(token, secret);
+            req.user = decoded;
+        } catch (error: any) {
+            // Si el token es inválido o expiró, req.user no se define pero continúa la ejecución
+        }
+    }
+    next();
+}
+
+
 export function ensureSysAdmin(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     ensureAuth(req, res, async () => {
         if (req.user && req.user.usr_sysadmin === true) {
