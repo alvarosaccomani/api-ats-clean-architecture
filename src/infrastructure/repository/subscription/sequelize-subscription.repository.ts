@@ -5,6 +5,7 @@ import { SequelizePlan } from "../../model/plan/plan.model";
 import { SequelizeApplication } from "../../model/application/application.model";
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeCompany } from "../../model/company/company.model";
+import { v4 as uuidv4 } from "uuid";
 
 export class SequelizeSubscriptionRepository implements SubscriptionRepository {
     async getSubscriptions(): Promise<SubscriptionEntity[] | null> {
@@ -108,6 +109,80 @@ export class SequelizeSubscriptionRepository implements SubscriptionRepository {
             return subscriptions;
         } catch (error: any) {
             console.error('Error en findSubscriptionsBySubscriber:', error.message);
+            throw error;
+        }
+    }
+
+    async subscribeNatively(data: { app_cod: string; pla_uuid: string; subscriber_type: 'USER' | 'COMPANY'; subscriber_id: string }): Promise<SubscriptionEntity | null> {
+        try {
+            const { app_cod, pla_uuid, subscriber_type, subscriber_id } = data;
+
+            const app = await SequelizeApplication.findOne({ where: { app_cod } });
+            if (!app) {
+                throw new Error(`La aplicación con código '${app_cod}' no existe.`);
+            }
+
+            const plan = await SequelizePlan.findOne({ where: { pla_uuid } });
+            if (!plan) {
+                throw new Error(`El plan con ID '${pla_uuid}' no existe.`);
+            }
+
+            const whereClause: any = {
+                sub_subscribertype: subscriber_type,
+                app_uuid: app.app_uuid
+            };
+            if (subscriber_type === 'USER') {
+                whereClause.usr_uuid = subscriber_id;
+            } else {
+                whereClause.cmp_uuid = subscriber_id;
+            }
+
+            let existingSubscription = await SequelizeSubscription.findOne({ where: whereClause });
+
+            if (existingSubscription) {
+                await SequelizeSubscription.update(
+                    {
+                        pla_uuid: plan.pla_uuid,
+                        sub_active: true,
+                        sub_status: 'ACTIVE',
+                        sub_renewsat: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                    },
+                    { where: { sub_uuid: existingSubscription.sub_uuid } }
+                );
+
+                const updated = await SequelizeSubscription.findByPk(existingSubscription.sub_uuid, {
+                    include: [
+                        { model: SequelizePlan, as: 'plan' },
+                        { model: SequelizeApplication, as: 'application' }
+                    ]
+                });
+                return updated ? updated.dataValues : null;
+            } else {
+                const sub_uuid = uuidv4();
+                const newSubData: any = {
+                    sub_uuid,
+                    pla_uuid: plan.pla_uuid,
+                    app_uuid: app.app_uuid,
+                    sub_subscribertype: subscriber_type,
+                    usr_uuid: subscriber_type === 'USER' ? subscriber_id : null,
+                    cmp_uuid: subscriber_type === 'COMPANY' ? subscriber_id : null,
+                    sub_status: 'ACTIVE',
+                    sub_active: true,
+                    sub_startsat: new Date(),
+                    sub_renewsat: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+                };
+
+                const created = await SequelizeSubscription.create(newSubData);
+                const result = await SequelizeSubscription.findByPk(created.sub_uuid, {
+                    include: [
+                        { model: SequelizePlan, as: 'plan' },
+                        { model: SequelizeApplication, as: 'application' }
+                    ]
+                });
+                return result ? result.dataValues : null;
+            }
+        } catch (error: any) {
+            console.error('Error en subscribeNatively:', error.message);
             throw error;
         }
     }

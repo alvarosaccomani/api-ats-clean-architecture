@@ -49,4 +49,8 @@ export class SubscriptionUseCase {
         const deleted = await this.subscriptionRepository.deleteSubscription(pla_uuid, app_uuid, sub_uuid);
         return deleted;
     }
+
+    public async subscribeNatively(data: { app_cod: string; pla_uuid: string; subscriber_type: 'USER' | 'COMPANY'; subscriber_id: string }): Promise<SubscriptionEntity | null> {
+        return await this.subscriptionRepository.subscribeNatively(data);
+    }
 }

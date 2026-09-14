@@ -9,6 +9,7 @@ export class SubscriptionController {
         this.saveCtrl = this.saveCtrl.bind(this);
         this.updateCtrl = this.updateCtrl.bind(this);
         this.deleteCtrl = this.deleteCtrl.bind(this);
+        this.subscribeNativelyCtrl = this.subscribeNativelyCtrl.bind(this);
     }
 
     public async getAllCtrl(req: Request, res: Response) {
@@ -155,6 +156,48 @@ export class SubscriptionController {
             return res.status(400).json({
                 success: false,
                 message: 'No se pudo eliminar la suscripción.',
+                error: error.message,
+            });
+        }
+    }
+
+    public async subscribeNativelyCtrl(req: Request, res: Response) {
+        try {
+            const { app_cod, pla_uuid, subscriber_type, subscriber_id } = req.body;
+
+            if (!app_cod || !pla_uuid || !subscriber_type || !subscriber_id) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No se pudo procesar la suscripción nativa.',
+                    error: 'Debe proporcionar app_cod, pla_uuid, subscriber_type (USER o COMPANY) y subscriber_id.'
+                });
+            }
+
+            if (subscriber_type !== 'USER' && subscriber_type !== 'COMPANY') {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Tipo de suscriptor inválido.',
+                    error: 'subscriber_type debe ser USER o COMPANY.'
+                });
+            }
+
+            const subscription = await this.subscriptionUseCase.subscribeNatively({
+                app_cod,
+                pla_uuid,
+                subscriber_type,
+                subscriber_id
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'Suscripción procesada y activada correctamente.',
+                data: subscription
+            });
+        } catch (error: any) {
+            console.error('Error en subscribeNativelyCtrl (SubscriptionController):', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudo procesar la suscripción nativa.',
                 error: error.message,
             });
         }

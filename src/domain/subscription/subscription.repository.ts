@@ -7,4 +7,5 @@ export interface SubscriptionRepository {
     updateSubscription(pla_uuid: string, app_uuid: string, sub_uuid: string, subscription: SubscriptionUpdateData): Promise<SubscriptionEntity | null>;
     deleteSubscription(pla_uuid: string, app_uuid: string, sub_uuid: string): Promise<SubscriptionEntity | null>;
     findSubscriptionByName(cmp_code: string, cmp_name: string): Promise<SubscriptionEntity | null>;
+    subscribeNatively(data: { app_cod: string; pla_uuid: string; subscriber_type: 'USER' | 'COMPANY'; subscriber_id: string }): Promise<SubscriptionEntity | null>;
 }

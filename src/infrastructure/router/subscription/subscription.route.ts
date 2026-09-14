@@ -27,6 +27,7 @@ function configureSubscriptionRoutes(app: Express) {
     app.get(`/${process.env.BASE_URL_API}/subscriptions/subscriber/:type/:id`, ensureAuth, subscriptionCtrl.getBySubscriberCtrl);
     app.get(`/${process.env.BASE_URL_API}/subscription/:sub_uuid`, ensureAuth, subscriptionCtrl.getCtrl);
     app.post(`/${process.env.BASE_URL_API}/subscription`, ensureAuth, subscriptionCtrl.saveCtrl);
+    app.post(`/${process.env.BASE_URL_API}/subscription/subscribe-natively`, ensureAuth, subscriptionCtrl.subscribeNativelyCtrl);
     app.put(`/${process.env.BASE_URL_API}/subscription/:sub_uuid`, ensureAuth, subscriptionCtrl.updateCtrl);
     app.delete(`/${process.env.BASE_URL_API}/subscription/:sub_uuid`, ensureAuth, subscriptionCtrl.deleteCtrl);
 }
