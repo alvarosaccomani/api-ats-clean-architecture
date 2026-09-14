@@ -94,4 +94,27 @@ export class SequelizePlanRepository implements PlanRepository {
             throw error;
         }
     }
+
+    async getPlansByAppCod(app_cod: string): Promise<PlanEntity[] | null> {
+        try {
+            const app = await SequelizeApplication.findOne({
+                where: { app_cod }
+            });
+            if (!app) {
+                return [];
+            }
+
+            const plans = await SequelizePlan.findAll({
+                where: {
+                    app_uuid: app.app_uuid,
+                    pla_active: true
+                },
+                include: [{ model: SequelizeApplication, as: 'application' }]
+            });
+            return plans;
+        } catch (error: any) {
+            console.error('Error en getPlansByAppCod:', error.message);
+            throw error;
+        }
+    }
 }

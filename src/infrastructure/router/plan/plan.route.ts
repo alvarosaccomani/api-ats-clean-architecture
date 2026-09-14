@@ -2,7 +2,7 @@ import { Express } from "express";
 import { SequelizePlanRepository } from "../../repository/plan/sequelize-plan.repository";
 import { PlanUseCase } from "../../../application/plan/plan-use-case";
 import { PlanController } from "../../controller/plan/plan.controller";
-import { ensureAuth } from "../../middleware/auth.middleware";
+import { ensureAuth, optionalAuth } from "../../middleware/auth.middleware";
 
 function configurePlanRoutes(app: Express) {
     /*
@@ -24,6 +24,7 @@ function configurePlanRoutes(app: Express) {
     *   Registrar rutas protegidas con ensureAuth
     */
     app.get(`/${process.env.BASE_URL_API}/plans`, ensureAuth, planCtrl.getAllCtrl);
+    app.get(`/${process.env.BASE_URL_API}/plans/app/:app_cod`, optionalAuth, planCtrl.getPlansByAppCodCtrl);
     app.get(`/${process.env.BASE_URL_API}/plan/:pla_uuid`, ensureAuth, planCtrl.getCtrl);
     app.post(`/${process.env.BASE_URL_API}/plan`, ensureAuth, planCtrl.saveCtrl);
     app.put(`/${process.env.BASE_URL_API}/plan/:pla_uuid`, ensureAuth, planCtrl.updateCtrl);

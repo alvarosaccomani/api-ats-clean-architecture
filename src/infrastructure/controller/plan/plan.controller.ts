@@ -8,6 +8,7 @@ export class PlanController {
         this.saveCtrl = this.saveCtrl.bind(this);
         this.updateCtrl = this.updateCtrl.bind(this);
         this.deleteCtrl = this.deleteCtrl.bind(this);
+        this.getPlansByAppCodCtrl = this.getPlansByAppCodCtrl.bind(this);
     }
 
     public async getAllCtrl(req: Request, res: Response) {
@@ -128,6 +129,32 @@ export class PlanController {
             return res.status(400).json({
                 success: false,
                 message: 'No se pudo eliminar el plan.',
+                error: error.message,
+            });
+        }
+    }
+
+    public async getPlansByAppCodCtrl(req: Request, res: Response) {
+        try {
+            const { app_cod } = req.params;
+            if (!app_cod) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'No se pudieron recuperar los planes de la aplicación.',
+                    error: 'Debe proporcionar el código de aplicación (app_cod).'
+                });
+            }
+            const plans = await this.planUseCase.getPlansByAppCod(app_cod);
+            return res.status(200).send({
+                success: true,
+                message: 'Planes de la aplicación retornados.',
+                data: plans
+            });
+        } catch (error: any) {
+            console.error('Error en getPlansByAppCodCtrl (PlanController):', error.message);
+            return res.status(400).json({
+                success: false,
+                message: 'No se pudieron recuperar los planes de la aplicación.',
                 error: error.message,
             });
         }

@@ -7,4 +7,5 @@ export interface PlanRepository {
     updatePlan(pla_uuid: string, app_uuid: string, plan: PlanUpdateData): Promise<PlanEntity | null>;
     deletePlan(pla_uuid: string, app_uuid: string): Promise<PlanEntity | null>;
     findPlanByName(pla_code: string, pla_name: string): Promise<PlanEntity | null>;
+    getPlansByAppCod(app_cod: string): Promise<PlanEntity[] | null>;
 }

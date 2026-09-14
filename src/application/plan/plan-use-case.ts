@@ -41,4 +41,9 @@ export class PlanUseCase {
         const planDeleted = await this.planRepository.deletePlan(pla_uuid, app_uuid);
         return planDeleted;
     }
+
+    public async getPlansByAppCod(app_cod: string): Promise<PlanEntity[] | null> {
+        const plans = await this.planRepository.getPlansByAppCod(app_cod);
+        return plans;
+    }
 }
