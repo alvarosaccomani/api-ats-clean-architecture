@@ -13,6 +13,7 @@ export class SequelizeApplication extends Model<ApplicationEntity> {
   declare app_hasaccess: boolean;
   declare app_active: boolean;
   declare app_loginmode: string;
+  declare app_allowedsubscribertypes: string;
   declare app_createdat: Date;
   declare app_updatedat: Date;
   declare settings?: any[];
@@ -62,6 +63,11 @@ SequelizeApplication.init({
     type: DataTypes.STRING,
     allowNull: false,
     defaultValue: 'local'
+  },
+  app_allowedsubscribertypes: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'USER,COMPANY'
   },
   app_createdat: {
     type: DataTypes.DATE,
