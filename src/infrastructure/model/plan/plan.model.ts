@@ -14,6 +14,7 @@ export class SequelizePlan extends Model<PlanEntity> {
   declare pla_billingcycle: string;
   declare pla_pricingtype: string;
   declare pla_platformfeepercent: number;
+  declare pla_subscribertype: string;
   declare pla_active: boolean;
   declare pla_createdat: Date;
   declare pla_updatedat: Date;
@@ -64,6 +65,11 @@ SequelizePlan.init({
     type: DataTypes.DECIMAL(5, 2),
     allowNull: true,
     defaultValue: 0.00
+  },
+  pla_subscribertype: {
+    type: DataTypes.STRING,
+    allowNull: false,
+    defaultValue: 'COMPANY'
   },
   pla_active: {
     type: DataTypes.BOOLEAN,

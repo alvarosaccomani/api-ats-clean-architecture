@@ -9,10 +9,11 @@ export interface PlanEntity {
     pla_billingcycle: string,
     pla_pricingtype: string,
     pla_platformfeepercent: number,
+    pla_subscribertype?: string,
     pla_active: boolean,
     pla_createdat: Date,
     pla_updatedat: Date
 }
 
 //Update
-export type PlanUpdateData = Pick<PlanEntity, 'pla_cod' | 'pla_name' | 'pla_description' | 'pla_price' | 'pla_currency' | 'pla_billingcycle' | 'pla_pricingtype' | 'pla_platformfeepercent' | 'pla_active'>
+export type PlanUpdateData = Pick<PlanEntity, 'pla_cod' | 'pla_name' | 'pla_description' | 'pla_price' | 'pla_currency' | 'pla_billingcycle' | 'pla_pricingtype' | 'pla_platformfeepercent' | 'pla_subscribertype' | 'pla_active'>
