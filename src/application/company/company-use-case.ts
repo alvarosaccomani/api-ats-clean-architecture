@@ -16,6 +16,7 @@ export class CompanyUseCase {
     }
 
     public async saveCompany(companyData: {
+        cmp_uuid?: string;
         cmp_cod: string;
         cmp_name: string;
         cmp_cuit?: string;

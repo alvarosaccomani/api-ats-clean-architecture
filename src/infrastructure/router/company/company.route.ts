@@ -25,6 +25,7 @@ function configureCompanyRoutes(app: Express) {
     */
     app.get(`/${process.env.BASE_URL_API}/companies`, ensureAuth, companyCtrl.getAllCtrl);
     app.get(`/${process.env.BASE_URL_API}/company/:cmp_uuid`, ensureAuth, companyCtrl.getCtrl);
+    app.get(`/${process.env.BASE_URL_API}/applications/:app_uuid/remote-companies`, ensureAuth, companyCtrl.getRemoteSatelliteCompaniesCtrl);
     app.post(`/${process.env.BASE_URL_API}/company`, ensureAuth, companyCtrl.saveCtrl);
     app.put(`/${process.env.BASE_URL_API}/company/:cmp_uuid`, ensureAuth, companyCtrl.updateCtrl);
     app.delete(`/${process.env.BASE_URL_API}/company/:cmp_uuid`, ensureAuth, companyCtrl.deleteCtrl);
