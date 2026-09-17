@@ -64,7 +64,15 @@ export class CompanyController {
                     error: 'Debe proporcionar el Código (cmp_cod) y Nombre (cmp_name).'
                 });
             }
-            const company = await this.companyUseCase.saveCompany(req.body);
+
+            const authenticatedUser = (req as any).user;
+            const usr_uuid = req.body.usr_uuid || authenticatedUser?.sub || authenticatedUser?.usr_uuid;
+            const payload = {
+                ...req.body,
+                usr_uuid
+            };
+
+            const company = await this.companyUseCase.saveCompany(payload);
             return res.status(200).json({
                 success: true,
                 message: 'Empresa registrada.',

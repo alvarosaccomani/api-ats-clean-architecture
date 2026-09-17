@@ -3,6 +3,9 @@ import { CompanyRepository } from "../../../domain/company/company.repository";
 import { SequelizeCompany } from "../../model/company/company.model";
 import { Op } from 'sequelize';
 
+import { SequelizeUserCompany } from '../../model/user-company/user-company.model';
+import { v4 as uuidv4 } from 'uuid';
+
 export class SequelizeCompanyRepository implements CompanyRepository {
     async getCompanies(): Promise<CompanyEntity[] | null> {
         try {
@@ -32,6 +35,18 @@ export class SequelizeCompanyRepository implements CompanyRepository {
     async createCompany(company: CompanyEntity): Promise<CompanyEntity | null> {
         try {
             const created = await SequelizeCompany.create(company as any);
+            const creatorUserUuid = (company as any).usr_uuid;
+
+            if (creatorUserUuid && created.cmp_uuid) {
+                await SequelizeUserCompany.create({
+                    usrcmp_uuid: uuidv4(),
+                    usr_uuid: creatorUserUuid,
+                    cmp_uuid: created.cmp_uuid,
+                    usrcmp_role: 'OWNER',
+                    usrcmp_active: true
+                } as any);
+            }
+
             return created.dataValues;
         } catch (error: any) {
             console.error('Error en createCompany:', error.message);

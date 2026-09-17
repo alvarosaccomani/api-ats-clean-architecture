@@ -18,15 +18,19 @@ export class CompanyUseCase {
     public async saveCompany(companyData: {
         cmp_cod: string;
         cmp_name: string;
-        cmp_cuit: string;
-        cmp_address: string;
-        cmp_phone: string;
-        cmp_email: string;
-        cmp_description: string;
-        cmp_image: string;
-        cmp_active: boolean;
+        cmp_cuit?: string;
+        cmp_address?: string;
+        cmp_phone?: string;
+        cmp_email?: string;
+        cmp_description?: string;
+        cmp_image?: string;
+        cmp_active?: boolean;
+        usr_uuid?: string;
     }): Promise<CompanyEntity | null> {
         const companyValue = new CompanyValue(companyData);
+        if (companyData.usr_uuid) {
+            (companyValue as any).usr_uuid = companyData.usr_uuid;
+        }
         const companyCreated = await this.companyRepository.createCompany(companyValue);
         return companyCreated;
     }
