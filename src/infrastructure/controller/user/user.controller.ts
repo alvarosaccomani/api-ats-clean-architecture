@@ -227,56 +227,47 @@ export class UserController {
                 if (key === 'api_url' || key === 'backend_url') explicitApiUrl = val;
             }
 
-            const candidateBaseUrls: string[] = [];
-
-            if (apiDomain) {
+            let apiBaseUrl = '';
+            if (explicitApiUrl) {
+                apiBaseUrl = explicitApiUrl.replace(/\/+$/, '');
+            } else if (apiDomain) {
                 let domain = apiDomain.replace(/\/+$/, '');
                 if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
                     domain = `http://${domain}`;
                 }
-                if (apiPort) {
-                    if (domain.includes(':', 6)) {
-                        candidateBaseUrls.push(domain);
-                    } else {
-                        candidateBaseUrls.push(`${domain}:${apiPort}`);
-                    }
+                if (apiPort && !domain.includes(':', 6)) {
+                    apiBaseUrl = `${domain}:${apiPort}`;
                 } else {
-                    candidateBaseUrls.push(domain);
+                    apiBaseUrl = domain;
                 }
+            } else if (appRecord.app_url) {
+                apiBaseUrl = appRecord.app_url.replace(/\/+$/, '');
             }
 
-            if (explicitApiUrl) {
-                candidateBaseUrls.push(explicitApiUrl.replace(/\/+$/, ''));
-            }
-
-            if (appRecord.app_url) {
-                const cleanFrontendUrl = appRecord.app_url.replace(/\/+$/, '');
-                candidateBaseUrls.push(cleanFrontendUrl);
-
-                if (cleanFrontendUrl.includes('localhost:4200') || cleanFrontendUrl.includes('localhost:4201') || cleanFrontendUrl.includes('localhost:4202')) {
-                    candidateBaseUrls.push('http://localhost:3000');
-                    candidateBaseUrls.push('http://localhost:3001');
-                    candidateBaseUrls.push('http://localhost:8080');
-                }
-                if (cleanFrontendUrl.includes('://') && !cleanFrontendUrl.includes('localhost')) {
-                    const parts = cleanFrontendUrl.split('://');
-                    candidateBaseUrls.push(`${parts[0]}://api.${parts[1]}`);
-                }
+            if (!apiBaseUrl) {
+                return res.status(200).json({
+                    success: false,
+                    message: `La aplicación "${appRecord.app_name}" no tiene configurada la URL de su API (configurar api_domain y api_port, o api_url en settings).`,
+                    data: []
+                });
             }
 
             const endpointsToTry: string[] = [];
-            for (const base of candidateBaseUrls) {
-                endpointsToTry.push(`${base}/api/users`);
-                endpointsToTry.push(`${base}/users`);
+            if (apiBaseUrl.endsWith('/api')) {
+                endpointsToTry.push(`${apiBaseUrl}/users`);
+            } else {
+                endpointsToTry.push(`${apiBaseUrl}/api/users`);
+                endpointsToTry.push(`${apiBaseUrl}/users`);
             }
 
             let remoteUsers: any[] = [];
             let fetchSuccessful = false;
+            let lastErrorMessage = '';
 
             if (typeof fetch !== 'undefined') {
                 for (const url of endpointsToTry) {
                     try {
-                        console.log(`[RemoteUsers] Intentando consultar API satélite en: ${url}`);
+                        console.log(`[RemoteUsers] Consultando API satélite en: ${url}`);
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 4000);
                         const response = await fetch(url, { signal: controller.signal });
@@ -292,16 +283,28 @@ export class UserController {
                             console.log(`[RemoteUsers] ¡Éxito! Se obtuvieron ${items.length} usuarios desde: ${url}`);
                             remoteUsers = items;
                             break;
+                        } else {
+                            lastErrorMessage = `HTTP ${response.status} en ${url}`;
+                            console.warn(`[RemoteUsers] ${url} respondió HTTP ${response.status}`);
                         }
                     } catch (err: any) {
+                        lastErrorMessage = err.message;
                         console.warn(`[RemoteUsers] Error al consultar ${url}:`, err.message);
                     }
                 }
             }
 
+            if (!fetchSuccessful) {
+                return res.status(200).json({
+                    success: false,
+                    message: `No se pudo conectar con la API de "${appRecord.app_name}" en ${apiBaseUrl} (${lastErrorMessage || 'sin respuesta'}). Verificá que el servicio esté activo y el puerto/ruta sean correctos.`,
+                    data: []
+                });
+            }
+
             return res.status(200).json({
                 success: true,
-                message: fetchSuccessful ? 'Usuarios remotos recuperados.' : 'No se pudo conectar con la app satélite o no devolvió usuarios.',
+                message: 'Usuarios remotos recuperados.',
                 data: remoteUsers
             });
         } catch (error: any) {

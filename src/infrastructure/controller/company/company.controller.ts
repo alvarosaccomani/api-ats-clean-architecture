@@ -175,60 +175,49 @@ export class CompanyController {
                 if (key === 'api_url' || key === 'backend_url') explicitApiUrl = val;
             }
 
-            const candidateBaseUrls: string[] = [];
-
-            // Si se definieron api_domain y/o api_port
-            if (apiDomain) {
+            let apiBaseUrl = '';
+            if (explicitApiUrl) {
+                apiBaseUrl = explicitApiUrl.replace(/\/+$/, '');
+            } else if (apiDomain) {
                 let domain = apiDomain.replace(/\/+$/, '');
                 if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
                     domain = `http://${domain}`;
                 }
-                if (apiPort) {
-                    if (domain.includes(':', 6)) {
-                        candidateBaseUrls.push(domain);
-                    } else {
-                        candidateBaseUrls.push(`${domain}:${apiPort}`);
-                    }
+                if (apiPort && !domain.includes(':', 6)) {
+                    apiBaseUrl = `${domain}:${apiPort}`;
                 } else {
-                    candidateBaseUrls.push(domain);
+                    apiBaseUrl = domain;
                 }
+            } else if (appRecord.app_url) {
+                // Fallback a app_url solo si no hay configuración específica de API
+                apiBaseUrl = appRecord.app_url.replace(/\/+$/, '');
             }
 
-            if (explicitApiUrl) {
-                candidateBaseUrls.push(explicitApiUrl.replace(/\/+$/, ''));
+            if (!apiBaseUrl) {
+                return res.status(200).json({
+                    success: false,
+                    message: `La aplicación "${appRecord.app_name}" no tiene configurada la URL de su API (configurar api_domain y api_port, o api_url en settings).`,
+                    data: []
+                });
             }
 
-            if (appRecord.app_url) {
-                const cleanFrontendUrl = appRecord.app_url.replace(/\/+$/, '');
-                candidateBaseUrls.push(cleanFrontendUrl);
-
-                // Si la URL es de desarrollo local (ej: http://localhost:4200), probar puertos de backend Node comunes
-                if (cleanFrontendUrl.includes('localhost:4200') || cleanFrontendUrl.includes('localhost:4201') || cleanFrontendUrl.includes('localhost:4202')) {
-                    candidateBaseUrls.push('http://localhost:3000');
-                    candidateBaseUrls.push('http://localhost:3001');
-                    candidateBaseUrls.push('http://localhost:8080');
-                }
-                // Si es un dominio de producción (ej: https://guva.com), probar subdominio api (https://api.guva.com)
-                if (cleanFrontendUrl.includes('://') && !cleanFrontendUrl.includes('localhost')) {
-                    const parts = cleanFrontendUrl.split('://');
-                    candidateBaseUrls.push(`${parts[0]}://api.${parts[1]}`);
-                }
-            }
-
-            // Armar lista de endpoints completos a probar (/api/companies y /companies)
+            // Armar endpoints limpios según la base configurada
             const endpointsToTry: string[] = [];
-            for (const base of candidateBaseUrls) {
-                endpointsToTry.push(`${base}/api/companies`);
-                endpointsToTry.push(`${base}/companies`);
+            if (apiBaseUrl.endsWith('/api')) {
+                endpointsToTry.push(`${apiBaseUrl}/companies`);
+            } else {
+                endpointsToTry.push(`${apiBaseUrl}/api/companies`);
+                endpointsToTry.push(`${apiBaseUrl}/companies`);
             }
 
             let remoteCompanies: any[] = [];
             let fetchSuccessful = false;
+            let lastErrorMessage = '';
 
             if (typeof fetch !== 'undefined') {
                 for (const url of endpointsToTry) {
                     try {
-                        console.log(`[RemoteCompanies] Intentando consultar API satélite en: ${url}`);
+                        console.log(`[RemoteCompanies] Consultando API satélite en: ${url}`);
                         const controller = new AbortController();
                         const timeoutId = setTimeout(() => controller.abort(), 4000);
                         const response = await fetch(url, { signal: controller.signal });
@@ -245,36 +234,22 @@ export class CompanyController {
                             remoteCompanies = items;
                             break;
                         } else {
+                            lastErrorMessage = `HTTP ${response.status} en ${url}`;
                             console.warn(`[RemoteCompanies] ${url} respondió HTTP ${response.status}`);
                         }
                     } catch (fetchErr: any) {
+                        lastErrorMessage = fetchErr.message;
                         console.warn(`[RemoteCompanies] No se pudo conectar a ${url}: ${fetchErr.message}`);
                     }
                 }
             }
 
-            // Fallback: Solo si la conexión falló completamente y no hubo respuesta remota
-            if (!fetchSuccessful && remoteCompanies.length === 0) {
-                console.log(`[RemoteCompanies] Sin respuesta remota para ${appRecord.app_name} (${appRecord.app_url}). Usando fallback local.`);
-                const appCod = appRecord.app_cod?.toUpperCase() || 'APP';
-                remoteCompanies = [
-                    {
-                        cmp_cod: `${appCod}_CMP_01`,
-                        cmp_name: `Empresa Principal (${appRecord.app_name})`,
-                        cmp_cuit: '30-71112233-4',
-                        cmp_email: `contacto@${appRecord.app_cod.toLowerCase()}.com`,
-                        cmp_phone: '+54 11 4000-1000',
-                        cmp_description: `Empresa registrada localmente en la app satélite ${appRecord.app_name}`
-                    },
-                    {
-                        cmp_cod: `${appCod}_CMP_02`,
-                        cmp_name: `Sucursal Comercial (${appRecord.app_name})`,
-                        cmp_cuit: '30-72223344-5',
-                        cmp_email: `sucursal@${appRecord.app_cod.toLowerCase()}.com`,
-                        cmp_phone: '+54 11 4000-2000',
-                        cmp_description: `Unidad de negocio existente en ${appRecord.app_name}`
-                    }
-                ];
+            if (!fetchSuccessful) {
+                return res.status(200).json({
+                    success: false,
+                    message: `No se pudo conectar con la API de "${appRecord.app_name}" en ${apiBaseUrl} (${lastErrorMessage || 'sin respuesta'}). Verificá que el servicio esté activo y el puerto/ruta sean correctos.`,
+                    data: []
+                });
             }
 
             const result = remoteCompanies.map((rc: any) => {
