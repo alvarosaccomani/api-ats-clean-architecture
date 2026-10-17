@@ -3,6 +3,8 @@ import { UserUseCase } from "../../../application/user/user-use-case";
 import SocketAdapter from "../../services/socketAdapter";
 import { paginator } from "../../services/paginator.service";
 import { SystemEventLogger } from "../../services/system-event-logger.service";
+import { SequelizeApplication } from "../../model/application/application.model";
+import { SequelizeApplicationSetting } from "../../model/application-setting/application-setting.model";
 
 export class UserController {
     constructor(private userUseCase: UserUseCase, private socketAdapter: SocketAdapter) {
@@ -11,6 +13,7 @@ export class UserController {
         this.saveCtrl = this.saveCtrl.bind(this);
         this.updateCtrl = this.updateCtrl.bind(this);
         this.deleteCtrl = this.deleteCtrl.bind(this);
+        this.getRemoteSatelliteUsersCtrl = this.getRemoteSatelliteUsersCtrl.bind(this);
     }
 
     public async getAllCtrl(req: Request, res: Response) {
@@ -193,6 +196,120 @@ export class UserController {
                 success: false,
                 message: 'No se pudo eliminar el usuario.',
                 error: error.message,
+            });
+        }
+    }
+
+    public async getRemoteSatelliteUsersCtrl(req: Request, res: Response) {
+        try {
+            const app_uuid = req.params.app_uuid;
+            const appRecord = await SequelizeApplication.findByPk(app_uuid);
+            if (!appRecord) {
+                return res.status(404).json({
+                    success: false,
+                    message: 'Aplicación no encontrada.'
+                });
+            }
+
+            const appSettings = await SequelizeApplicationSetting.findAll({
+                where: { app_uuid }
+            });
+
+            let apiDomain = '';
+            let apiPort = '';
+            let explicitApiUrl = '';
+
+            for (const s of appSettings) {
+                const key = (s.apps_key || s.apps_parameter || '').toLowerCase().trim();
+                const val = (s.apps_value || '').trim();
+                if (key === 'api_domain') apiDomain = val;
+                if (key === 'api_port') apiPort = val;
+                if (key === 'api_url' || key === 'backend_url') explicitApiUrl = val;
+            }
+
+            const candidateBaseUrls: string[] = [];
+
+            if (apiDomain) {
+                let domain = apiDomain.replace(/\/+$/, '');
+                if (!domain.startsWith('http://') && !domain.startsWith('https://')) {
+                    domain = `http://${domain}`;
+                }
+                if (apiPort) {
+                    if (domain.includes(':', 6)) {
+                        candidateBaseUrls.push(domain);
+                    } else {
+                        candidateBaseUrls.push(`${domain}:${apiPort}`);
+                    }
+                } else {
+                    candidateBaseUrls.push(domain);
+                }
+            }
+
+            if (explicitApiUrl) {
+                candidateBaseUrls.push(explicitApiUrl.replace(/\/+$/, ''));
+            }
+
+            if (appRecord.app_url) {
+                const cleanFrontendUrl = appRecord.app_url.replace(/\/+$/, '');
+                candidateBaseUrls.push(cleanFrontendUrl);
+
+                if (cleanFrontendUrl.includes('localhost:4200') || cleanFrontendUrl.includes('localhost:4201') || cleanFrontendUrl.includes('localhost:4202')) {
+                    candidateBaseUrls.push('http://localhost:3000');
+                    candidateBaseUrls.push('http://localhost:3001');
+                    candidateBaseUrls.push('http://localhost:8080');
+                }
+                if (cleanFrontendUrl.includes('://') && !cleanFrontendUrl.includes('localhost')) {
+                    const parts = cleanFrontendUrl.split('://');
+                    candidateBaseUrls.push(`${parts[0]}://api.${parts[1]}`);
+                }
+            }
+
+            const endpointsToTry: string[] = [];
+            for (const base of candidateBaseUrls) {
+                endpointsToTry.push(`${base}/api/users`);
+                endpointsToTry.push(`${base}/users`);
+            }
+
+            let remoteUsers: any[] = [];
+            let fetchSuccessful = false;
+
+            if (typeof fetch !== 'undefined') {
+                for (const url of endpointsToTry) {
+                    try {
+                        console.log(`[RemoteUsers] Intentando consultar API satélite en: ${url}`);
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 4000);
+                        const response = await fetch(url, { signal: controller.signal });
+                        clearTimeout(timeoutId);
+
+                        if (response.ok) {
+                            fetchSuccessful = true;
+                            const json: any = await response.json();
+                            const items = Array.isArray(json) 
+                                ? json 
+                                : (Array.isArray(json?.data) ? json.data : (Array.isArray(json?.users) ? json.users : []));
+
+                            console.log(`[RemoteUsers] ¡Éxito! Se obtuvieron ${items.length} usuarios desde: ${url}`);
+                            remoteUsers = items;
+                            break;
+                        }
+                    } catch (err: any) {
+                        console.warn(`[RemoteUsers] Error al consultar ${url}:`, err.message);
+                    }
+                }
+            }
+
+            return res.status(200).json({
+                success: true,
+                message: fetchSuccessful ? 'Usuarios remotos recuperados.' : 'No se pudo conectar con la app satélite o no devolvió usuarios.',
+                data: remoteUsers
+            });
+        } catch (error: any) {
+            console.error('Error en getRemoteSatelliteUsersCtrl:', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al consultar usuarios remotos.',
+                error: error.message
             });
         }
     }
