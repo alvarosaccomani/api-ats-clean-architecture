@@ -6,6 +6,7 @@ import { SequelizeApplication } from "../../model/application/application.model"
 import { SequelizeUser } from "../../model/user/user.model";
 import { SequelizeCompany } from "../../model/company/company.model";
 import { v4 as uuidv4 } from "uuid";
+import { Op } from "sequelize";
 
 export class SequelizeSubscriptionRepository implements SubscriptionRepository {
     async getSubscriptions(): Promise<SubscriptionEntity[] | null> {
@@ -117,7 +118,14 @@ export class SequelizeSubscriptionRepository implements SubscriptionRepository {
         try {
             const { app_cod, pla_uuid, subscriber_type, subscriber_id } = data;
 
-            const app = await SequelizeApplication.findOne({ where: { app_cod } });
+            const app = await SequelizeApplication.findOne({
+                where: {
+                    [Op.or]: [
+                        { app_cod: app_cod },
+                        { app_uuid: app_cod }
+                    ]
+                }
+            });
             if (!app) {
                 throw new Error(`La aplicación con código '${app_cod}' no existe.`);
             }
