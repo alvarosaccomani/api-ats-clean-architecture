@@ -7,6 +7,7 @@ import * as jwt from 'jsonwebtoken';
 import moment from 'moment';
 import { createToken } from "../../services/jwt.service";
 import { SequelizeUser } from "../../model/user/user.model";
+import { SequelizeApplication } from "../../model/application/application.model";
 import { SystemEventLogger } from "../../services/system-event-logger.service";
 
 export class AuthController {
@@ -249,7 +250,7 @@ export class AuthController {
     public async generateSSOTokenCtrl(req: Request, res: Response) {
         try {
             const user = (req as any).user;
-            const { app_uuid } = req.body;
+            const { app_uuid, cmp_uuid } = req.body;
             if (!app_uuid) {
                 return res.status(400).json({
                     success: false,
@@ -258,13 +259,16 @@ export class AuthController {
             }
 
             const secret = process.env.JWT_SECRET || 'web_app_atssuite_api';
-            const payload = {
+            const payload: any = {
                 sub: user.sub || user.usr_uuid,
                 app_uuid,
                 type: 'SSO_EXCHANGE',
                 iat: moment().unix(),
                 exp: moment().add(5, 'minutes').unix()
             };
+            if (cmp_uuid) {
+                payload.cmp_uuid = cmp_uuid;
+            }
 
             const token = jwt.sign(payload, secret);
             return res.status(200).json({
@@ -324,6 +328,17 @@ export class AuthController {
             // Generar token de sesión de larga duración
             const sessionToken = createToken(user.dataValues);
             
+            // Obtener aplicación y evaluar derecho de acceso (entitlement / suscripción)
+            const app = await SequelizeApplication.findByPk(decoded.app_uuid);
+            let entitlement: any = null;
+            if (app) {
+                try {
+                    entitlement = await this.authUseCase.checkUserAppAccess(user.usr_uuid, app.app_cod);
+                } catch (e: any) {
+                    console.warn('[SSO] Error al evaluar checkUserAppAccess:', e.message);
+                }
+            }
+
             return res.status(200).json({
                 success: true,
                 message: 'Token SSO verificado correctamente.',
@@ -335,6 +350,23 @@ export class AuthController {
                         usr_name: user.usr_name,
                         usr_surname: user.usr_surname,
                         usr_sysadmin: !!user.usr_sysadmin
+                    },
+                    app: app ? {
+                        app_uuid: app.app_uuid,
+                        app_cod: app.app_cod,
+                        app_name: app.app_name
+                    } : null,
+                    activeCompanyUuid: decoded.cmp_uuid || null,
+                    entitlement: entitlement ? {
+                        hasAccess: entitlement.hasAccess,
+                        accessType: entitlement.accessType,
+                        reason: entitlement.reason,
+                        stores: entitlement.stores || []
+                    } : {
+                        hasAccess: !!user.usr_sysadmin,
+                        accessType: user.usr_sysadmin ? 'SYSADMIN' : 'NO_ACCESS',
+                        reason: user.usr_sysadmin ? 'Acceso SysAdmin' : 'Sin evaluación de suscripción',
+                        stores: []
                     }
                 }
             });
