@@ -98,7 +98,12 @@ export class SequelizePlanRepository implements PlanRepository {
     async getPlansByAppCod(app_cod: string): Promise<PlanEntity[] | null> {
         try {
             const app = await SequelizeApplication.findOne({
-                where: { app_cod }
+                where: {
+                    [Op.or]: [
+                        { app_cod: app_cod },
+                        { app_uuid: app_cod }
+                    ]
+                }
             });
             if (!app) {
                 return [];
