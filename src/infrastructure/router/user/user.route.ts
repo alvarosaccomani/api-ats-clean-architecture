@@ -24,6 +24,8 @@ function configureUserRoutes(app: Express, socketAdapter: SocketAdapter) {
     /*
     *   Registrar rutas protegidas con ensureAuth
     */
+    app.get(`/${process.env.BASE_URL_API}/users-satellites-matrix`, ensureAuth, userCtrl.getUsersSatellitesMatrixCtrl);
+    app.get(`/${process.env.BASE_URL_API}/users/:usr_uuid/verify-satellites`, ensureAuth, userCtrl.verifyUserSatellitesPresenceCtrl);
     app.get(`/${process.env.BASE_URL_API}/users/:filter?/:page?/:perPage?`, ensureAuth, userCtrl.getAllCtrl);
     app.get(`/${process.env.BASE_URL_API}/applications/:app_uuid/remote-users`, ensureAuth, userCtrl.getRemoteSatelliteUsersCtrl);
     app.get(`/${process.env.BASE_URL_API}/user/:usr_uuid`, ensureAuth, userCtrl.getCtrl);
