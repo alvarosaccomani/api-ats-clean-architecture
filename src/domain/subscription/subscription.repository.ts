@@ -8,4 +8,6 @@ export interface SubscriptionRepository {
     deleteSubscription(pla_uuid: string, app_uuid: string, sub_uuid: string): Promise<SubscriptionEntity | null>;
     findSubscriptionByName(cmp_code: string, cmp_name: string): Promise<SubscriptionEntity | null>;
     subscribeNatively(data: { app_cod: string; pla_uuid: string; subscriber_type: 'USER' | 'COMPANY'; subscriber_id: string }): Promise<SubscriptionEntity | null>;
+    grantComplimentary(data: { usr_uuid: string; app_uuid: string; pla_uuid?: string; duration_months?: number }): Promise<SubscriptionEntity | null>;
+    revokeSubscription(data: { usr_uuid: string; app_uuid: string }): Promise<SubscriptionEntity | null>;
 }

@@ -194,4 +194,152 @@ export class SequelizeSubscriptionRepository implements SubscriptionRepository {
             throw error;
         }
     }
+
+    /**
+     * @description Otorga una suscripción bonificada / de cortesía a un usuario para una aplicación.
+     */
+    async grantComplimentary(data: { usr_uuid: string; app_uuid: string; pla_uuid?: string; duration_months?: number }): Promise<SubscriptionEntity | null> {
+        try {
+            const { usr_uuid, app_uuid, pla_uuid, duration_months } = data;
+
+            // 1. Validar existencia del usuario
+            const user = await SequelizeUser.findByPk(usr_uuid);
+            if (!user) {
+                throw new Error(`El usuario con ID '${usr_uuid}' no existe.`);
+            }
+
+            // 2. Validar aplicación
+            const app = await SequelizeApplication.findOne({
+                where: {
+                    [Op.or]: [
+                        { app_uuid },
+                        { app_cod: app_uuid }
+                    ]
+                }
+            });
+            if (!app) {
+                throw new Error(`La aplicación '${app_uuid}' no existe.`);
+            }
+
+            // 3. Determinar o resolver el plan
+            let plan: any = null;
+            if (pla_uuid) {
+                plan = await SequelizePlan.findOne({ where: { pla_uuid } });
+            }
+            if (!plan) {
+                // Tomar el primer plan activo disponible para esa app
+                plan = await SequelizePlan.findOne({
+                    where: { app_uuid: app.app_uuid, pla_active: true },
+                    order: [['pla_price', 'DESC']]
+                });
+            }
+            if (!plan) {
+                // Si la app no tiene planes creados, tomar cualquier plan o crear uno de cortesía
+                plan = await SequelizePlan.findOne({ where: { app_uuid: app.app_uuid } });
+            }
+            if (!plan) {
+                throw new Error(`La aplicación '${app.app_name}' no cuenta con planes comerciales configurados para bonificar.`);
+            }
+
+            // 4. Calcular vigencia
+            const months = duration_months && duration_months > 0 ? duration_months : 12;
+            const startDate = new Date();
+            const endDate = new Date(startDate.getTime() + months * 30 * 24 * 60 * 60 * 1000);
+
+            // 5. Verificar si el usuario ya posee un registro de suscripción para esta app
+            const existingSubscription = await SequelizeSubscription.findOne({
+                where: {
+                    app_uuid: app.app_uuid,
+                    usr_uuid: user.usr_uuid
+                }
+            });
+
+            if (existingSubscription) {
+                await SequelizeSubscription.update(
+                    {
+                        pla_uuid: plan.pla_uuid,
+                        sub_status: 'ACTIVE',
+                        sub_active: true,
+                        sub_startsat: startDate,
+                        sub_renewsat: endDate,
+                        sub_endsat: endDate
+                    },
+                    { where: { sub_uuid: existingSubscription.sub_uuid } }
+                );
+
+                const updated = await SequelizeSubscription.findByPk(existingSubscription.sub_uuid, {
+                    include: [
+                        { model: SequelizePlan, as: 'plan' },
+                        { model: SequelizeApplication, as: 'application' }
+                    ]
+                });
+                return updated ? updated.dataValues : null;
+            } else {
+                const sub_uuid = uuidv4();
+                const newSub = await SequelizeSubscription.create({
+                    sub_uuid,
+                    pla_uuid: plan.pla_uuid,
+                    app_uuid: app.app_uuid,
+                    sub_subscribertype: 'USER',
+                    usr_uuid: user.usr_uuid,
+                    sub_status: 'ACTIVE',
+                    sub_active: true,
+                    sub_startsat: startDate,
+                    sub_renewsat: endDate,
+                    sub_endsat: endDate
+                } as any);
+
+                const result = await SequelizeSubscription.findByPk(newSub.sub_uuid, {
+                    include: [
+                        { model: SequelizePlan, as: 'plan' },
+                        { model: SequelizeApplication, as: 'application' }
+                    ]
+                });
+                return result ? result.dataValues : null;
+            }
+        } catch (error: any) {
+            console.error('Error en grantComplimentary:', error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * @description Revoca o cancela una suscripción activa de un usuario para una aplicación.
+     */
+    async revokeSubscription(data: { usr_uuid: string; app_uuid: string }): Promise<SubscriptionEntity | null> {
+        try {
+            const { usr_uuid, app_uuid } = data;
+
+            const existing = await SequelizeSubscription.findOne({
+                where: {
+                    app_uuid,
+                    usr_uuid
+                }
+            });
+
+            if (!existing) {
+                throw new Error('No se encontró una suscripción activa para este usuario y aplicación.');
+            }
+
+            await SequelizeSubscription.update(
+                {
+                    sub_status: 'CANCELED',
+                    sub_active: false,
+                    sub_endsat: new Date()
+                },
+                { where: { sub_uuid: existing.sub_uuid } }
+            );
+
+            const updated = await SequelizeSubscription.findByPk(existing.sub_uuid, {
+                include: [
+                    { model: SequelizePlan, as: 'plan' },
+                    { model: SequelizeApplication, as: 'application' }
+                ]
+            });
+            return updated ? updated.dataValues : null;
+        } catch (error: any) {
+            console.error('Error en revokeSubscription:', error.message);
+            throw error;
+        }
+    }
 }

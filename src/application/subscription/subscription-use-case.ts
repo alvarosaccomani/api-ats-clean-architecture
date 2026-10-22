@@ -53,4 +53,12 @@ export class SubscriptionUseCase {
     public async subscribeNatively(data: { app_cod: string; pla_uuid: string; subscriber_type: 'USER' | 'COMPANY'; subscriber_id: string }): Promise<SubscriptionEntity | null> {
         return await this.subscriptionRepository.subscribeNatively(data);
     }
+
+    public async grantComplimentary(data: { usr_uuid: string; app_uuid: string; pla_uuid?: string; duration_months?: number }): Promise<SubscriptionEntity | null> {
+        return await this.subscriptionRepository.grantComplimentary(data);
+    }
+
+    public async revokeSubscription(data: { usr_uuid: string; app_uuid: string }): Promise<SubscriptionEntity | null> {
+        return await this.subscriptionRepository.revokeSubscription(data);
+    }
 }

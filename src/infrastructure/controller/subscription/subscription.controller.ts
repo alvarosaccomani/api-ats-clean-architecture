@@ -10,6 +10,8 @@ export class SubscriptionController {
         this.updateCtrl = this.updateCtrl.bind(this);
         this.deleteCtrl = this.deleteCtrl.bind(this);
         this.subscribeNativelyCtrl = this.subscribeNativelyCtrl.bind(this);
+        this.grantComplimentaryCtrl = this.grantComplimentaryCtrl.bind(this);
+        this.revokeSubscriptionCtrl = this.revokeSubscriptionCtrl.bind(this);
     }
 
     public async getAllCtrl(req: Request, res: Response) {
@@ -199,6 +201,68 @@ export class SubscriptionController {
                 success: false,
                 message: 'No se pudo procesar la suscripción nativa.',
                 error: error.message,
+            });
+        }
+    }
+
+    public async grantComplimentaryCtrl(req: Request, res: Response) {
+        try {
+            const { usr_uuid, app_uuid, pla_uuid, duration_months } = req.body;
+            if (!usr_uuid || !app_uuid) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Faltan parámetros requeridos: usr_uuid y app_uuid son obligatorios.'
+                });
+            }
+
+            const subscription = await this.subscriptionUseCase.grantComplimentary({
+                usr_uuid,
+                app_uuid,
+                pla_uuid,
+                duration_months: duration_months ? parseInt(duration_months) : 12
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'Suscripción bonificada otorgada exitosamente.',
+                data: subscription
+            });
+        } catch (error: any) {
+            console.error('Error en grantComplimentaryCtrl:', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al otorgar la suscripción bonificada.',
+                error: error.message
+            });
+        }
+    }
+
+    public async revokeSubscriptionCtrl(req: Request, res: Response) {
+        try {
+            const { usr_uuid, app_uuid } = req.body;
+            if (!usr_uuid || !app_uuid) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'Faltan parámetros requeridos: usr_uuid y app_uuid son obligatorios.'
+                });
+            }
+
+            const subscription = await this.subscriptionUseCase.revokeSubscription({
+                usr_uuid,
+                app_uuid
+            });
+
+            return res.status(200).json({
+                success: true,
+                message: 'Suscripción revocada exitosamente.',
+                data: subscription
+            });
+        } catch (error: any) {
+            console.error('Error en revokeSubscriptionCtrl:', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'Error al revocar la suscripción.',
+                error: error.message
             });
         }
     }
