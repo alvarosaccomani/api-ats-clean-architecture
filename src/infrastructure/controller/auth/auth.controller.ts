@@ -349,6 +349,9 @@ export class AuthController {
                         usr_email: user.usr_email,
                         usr_name: user.usr_name,
                         usr_surname: user.usr_surname,
+                        usr_nick: user.usr_nick,
+                        usr_image: user.usr_image,
+                        usr_bio: user.usr_bio,
                         usr_sysadmin: !!user.usr_sysadmin
                     },
                     app: app ? {
